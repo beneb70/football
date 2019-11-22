@@ -53,7 +53,6 @@ void Vector3::Set(real xyz) {
 }
 
 void Vector3::Set(real x, real y, real z) {
-  DO_VALIDATION;
   coords[0] = x;
   coords[1] = y;
   coords[2] = z;

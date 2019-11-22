@@ -44,8 +44,10 @@ namespace blunted {
       GraphicsSystem();
       virtual ~GraphicsSystem();
 
-      virtual void Initialize(const Properties &config);
+      virtual void Initialize(bool render);
       virtual void Exit();
+      void SetContext();
+      void DisableContext();
       const screenshoot& GetScreen();
 
       e_SystemType GetSystemType() const;

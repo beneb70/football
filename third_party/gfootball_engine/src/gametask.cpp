@@ -32,52 +32,54 @@ GameTask::~GameTask() {
   StopMatch();
 }
 
-void GameTask::StartMatch() {
+void GameTask::StartMatch(bool animations) {
   DO_VALIDATION;
   randomize(GetScenarioConfig().game_engine_random_seed);
   MatchData *matchData = GetMenuTask()->GetMatchData();
   assert(matchData);
   assert(!match);
-  match.reset(new Match(matchData, GetControllers()));
+  match.reset(new Match(matchData, GetControllers(), animations));
 }
 
-void GameTask::StopMatch() {
+bool GameTask::StopMatch() {
   DO_VALIDATION;
   if (match) {
     DO_VALIDATION;
     match->Exit();
     match.reset();
+    return true;
   }
+  return false;
 }
 
 void GameTask::ProcessPhase() {
   DO_VALIDATION;
-  if (match) {
-    DO_VALIDATION;
-    match->Process();
+  bool process = match->Process();
+  match->UpdateCamera();
+  if (process) {
     match->PreparePutBuffers();
     match->FetchPutBuffers();
-    match->Put();
-    std::vector<Player*> players;
-    match->GetActiveTeamPlayers(match->FirstTeam(), players);
-    match->GetActiveTeamPlayers(match->SecondTeam(), players);
-    std::vector<PlayerBase*> officials;
-    match->GetOfficialPlayers(officials);
+  }
+}
 
-    for (auto player : players) {
-      DO_VALIDATION;
-      if (match->GetPause() || player->NeedsModelUpdate()) {
-        DO_VALIDATION;
-        player->UpdateFullbodyModel();
-        boost::static_pointer_cast<Geometry>(player->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
-      }
-    }
-    for (auto official : officials) {
-      DO_VALIDATION;
-      official->UpdateFullbodyModel();
-      boost::static_pointer_cast<Geometry>(official->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
-    }
-    match->UploadGoalNetting(); // won't this block the whole process thing too? (opengl busy == wait, while mutex locked == no process)
-  }                             // !match
+void GameTask::PrepareRender() {
+  match->Put();
+  std::vector<Player*> players;
+  match->GetActiveTeamPlayers(match->FirstTeam(), players);
+  match->GetActiveTeamPlayers(match->SecondTeam(), players);
+  std::vector<PlayerBase*> officials;
+  match->GetOfficialPlayers(officials);
+
+  for (auto player : players) {
+    DO_VALIDATION;
+    player->UpdateFullbodyModel();
+    boost::static_pointer_cast<Geometry>(player->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
+  }
+  for (auto official : officials) {
+    DO_VALIDATION;
+    official->UpdateFullbodyModel();
+    boost::static_pointer_cast<Geometry>(official->GetFullbodyNode()->GetObject("fullbody"))->OnUpdateGeometryData();
+  }
+  match->UploadGoalNetting(); // won't this block the whole process thing too? (opengl busy == wait, while mutex locked == no process)
   DO_VALIDATION;
 }

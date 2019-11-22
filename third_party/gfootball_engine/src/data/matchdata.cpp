@@ -116,10 +116,10 @@ MatchData::MatchData()
   possession60seconds = 0.0f;
 }
 
-void MatchData::AddPossessionTime_10ms(int teamID) {
+void MatchData::AddPossessionTime(int teamID, unsigned long time) {
   DO_VALIDATION;
-  if (teamID == 0) possession60seconds = std::max(possession60seconds - 0.01f, -60.0f);
-  else if (teamID == 1) possession60seconds = std::min(possession60seconds + 0.01f, 60.0f);
+  if (teamID == 0) possession60seconds = std::max(possession60seconds - (0.001f * time), -60.0f);
+  else if (teamID == 1) possession60seconds = std::min(possession60seconds + (0.001f * time), 60.0f);
 }
 
 void MatchData::ProcessState(EnvState* state, int first_team) {

@@ -472,7 +472,6 @@ void Humanoid::Process() {
         }  // else: just stick to original
 
         if (targetPlayer) team->SelectPlayer(targetPlayer);
-        //if (targetPlayer) SetGreenDebugPilon(targetPlayer->GetPosition());
 
         float zcurve = 0.0f;
         Vector3 touchVec = ballDirection * 36 * (ballPower + 0.3f);

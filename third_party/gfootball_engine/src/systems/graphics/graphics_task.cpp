@@ -37,7 +37,7 @@ GraphicsTask::~GraphicsTask() {
   graphicsSystem = NULL;
 }
 
-void GraphicsTask::GetPhase() {
+void GraphicsTask::Render(bool swap_buffer) {
   DO_VALIDATION;
   Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
 
@@ -60,15 +60,8 @@ void GraphicsTask::GetPhase() {
     }
     cameraIter++;
   }
-}
-
-void GraphicsTask::ProcessPhase() {
-  DO_VALIDATION;
-  Renderer3D *renderer3D = graphicsSystem->GetRenderer3D();
-
   // poke lights
   GetContext().scene3D->PokeObjects(e_ObjectType_Light, e_SystemType_Graphics);
-
   // poke camera
   GetContext().scene3D->PokeObjects(e_ObjectType_Camera, e_SystemType_Graphics);
   // render the Overlay2D queue
@@ -84,7 +77,9 @@ void GraphicsTask::ProcessPhase() {
     }
   }
   renderer3D->RenderOverlay2D(queue);
-  renderer3D->SwapBuffers();
+  if (swap_buffer) {
+    renderer3D->SwapBuffers();
+  }
 }
 
 bool GraphicsTask::Execute(boost::intrusive_ptr<Camera> camera) {

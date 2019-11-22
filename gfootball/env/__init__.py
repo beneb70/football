@@ -181,11 +181,12 @@ def create_environment(env_name='',
       'dump_scores': write_goal_dumps,
       'players': players,
       'level': env_name,
-      'render': render,
       'tracesdir': logdir,
       'write_video': write_video,
   })
   env = football_env.FootballEnv(c)
+  if render:
+    env.render()
   if dump_frequency > 1:
     env = wrappers.PeriodicDumpWriter(env, dump_frequency)
   env = _apply_output_wrappers(

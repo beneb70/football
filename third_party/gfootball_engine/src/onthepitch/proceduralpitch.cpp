@@ -181,12 +181,6 @@ float GetSmoothGrassDirection(float coord, float repeat,
 Uint32 GetPitchNormalColor(SDL_Surface *pitchSurf, float xCoord, float yCoord,
                            float repeatMultiplier) {
   DO_VALIDATION;
-  if (!GetGameConfig().high_quality) {
-    DO_VALIDATION;
-    // Below logic is super slow, so we return fixed color (at least for now).
-    return 0xffaaaa;
-  }
-
   float noisefac = 0.06f;
 
   Vector3 normal = Vector3(0, 0, 1);

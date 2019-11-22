@@ -106,7 +106,6 @@ AABB AABB::operator+=(const AABB &add) {
   }
 
   void AABB::Reset() {
-    DO_VALIDATION;
     const float min_v = std::numeric_limits<real>::min() / 100;
     const float max_v = std::numeric_limits<real>::max() / 100;
     minxyz.Set(max_v, max_v, max_v);

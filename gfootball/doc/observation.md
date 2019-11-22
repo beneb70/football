@@ -34,7 +34,7 @@ Environment exposes following `raw` observations:
     - `right_team_roles` - same as for left team.
 - Controlled player information:
     - `active` - {0..N-1} integer denoting index of the controlled players.
-    - `sticky_actions` - 11-elements vectors of 0s or 1s denoting whether corresponding action is active:
+    - `sticky_actions` - 10-elements vectors of 0s or 1s denoting whether corresponding action is active:
         - `0` - `game_left`
         - `1` - `game_top_left`
         - `2` - `game_top`
@@ -44,8 +44,7 @@ Environment exposes following `raw` observations:
         - `6` - `game_bottom`
         - `7` - `game_bottom_left`
         - `8` - `game_sprint`
-        - `9` - `game_keeper_rush`
-        - `10` - `game_dribble`
+        - `9` - `game_dribble`
 - Match state:
     - `score` - pair of integers denoting number of goals for left and right teams, respectively.
     - `steps_left` - how many steps are left till the end of the match.

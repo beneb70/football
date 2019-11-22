@@ -102,18 +102,8 @@ void Officials::GetPlayers(std::vector<PlayerBase *> &players) {
 void Officials::Process() {
   DO_VALIDATION;
   referee->Process();
-  if (GetScenarioConfig().render) {
-    DO_VALIDATION;
-    linesmen[0]->Process();
-    linesmen[1]->Process();
-  }
-}
-
-void Officials::PreparePutBuffers() {
-  DO_VALIDATION;
-  referee->PreparePutBuffers();
-  linesmen[0]->PreparePutBuffers();
-  linesmen[1]->PreparePutBuffers();
+  linesmen[0]->Process();
+  linesmen[1]->Process();
 }
 
 void Officials::FetchPutBuffers() {
@@ -125,12 +115,9 @@ void Officials::FetchPutBuffers() {
 
 void Officials::Put(bool mirror) {
   DO_VALIDATION;
-  if (GetScenarioConfig().render) {
-    DO_VALIDATION;
-    referee->Put(mirror);
-    linesmen[0]->Put(mirror);
-    linesmen[1]->Put(mirror);
-  }
+  referee->Put(mirror);
+  linesmen[0]->Put(mirror);
+  linesmen[1]->Put(mirror);
 
   if (referee->GetCurrentFunctionType() == e_FunctionType_Special &&
       (match->GetReferee()->GetCurrentFoulType() == 2 ||
@@ -169,6 +156,8 @@ void Officials::Put(bool mirror) {
 void Officials::ProcessState(EnvState *state) {
   DO_VALIDATION;
   referee->ProcessStateBase(state);
+  state->setValidate(false);
   linesmen[0]->ProcessStateBase(state);
   linesmen[1]->ProcessStateBase(state);
+  state->setValidate(true);
 }

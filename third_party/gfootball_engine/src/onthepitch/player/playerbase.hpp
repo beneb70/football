@@ -80,7 +80,6 @@ class PlayerBase {
     virtual void FetchPutBuffers();
     void Put(bool mirror);
 
-    bool NeedsModelUpdate() { DO_VALIDATION; return humanoid->NeedsModelUpdate(); }
     void UpdateFullbodyModel() { DO_VALIDATION; humanoid->UpdateFullbodyModel(); }
 
     virtual float GetStat(PlayerStat name) const;

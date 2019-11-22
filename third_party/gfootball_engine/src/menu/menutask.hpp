@@ -63,10 +63,6 @@ class MenuTask : public Gui2Task {
     MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont, TTF_Font *defaultOutlineFont, const Properties* config);
     virtual ~MenuTask();
 
-    virtual void ProcessPhase();
-    void MenuAction();
-    void GameAction();
-
     void SetControllerSetup(const std::vector<SideSelection> &sides) { DO_VALIDATION; queuedFixture.sides = sides;  }
     const std::vector<SideSelection> GetControllerSetup() { DO_VALIDATION;
       return queuedFixture.sides;
@@ -75,11 +71,7 @@ class MenuTask : public Gui2Task {
     void SetMatchData(MatchData *matchData) { DO_VALIDATION;  queuedFixture.matchData = matchData;  }
     MatchData *GetMatchData() { DO_VALIDATION; return queuedFixture.matchData; } // hint: this lock is useless, since we are returning the pointer and not a copy
 
-    void SetMenuAction(e_MenuAction menuAction) { DO_VALIDATION; this->menuAction = menuAction; }
-
   protected:
-   e_MenuAction menuAction;
-
    QueuedFixture queuedFixture;
 
 };

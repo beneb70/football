@@ -26,6 +26,8 @@ namespace blunted {
 
     public:
       OpenGLRenderer3D();
+      virtual void SetContext();
+      virtual void DisableContext();
       virtual const screenshoot& GetScreen();
       virtual ~OpenGLRenderer3D();
 

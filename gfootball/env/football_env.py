@@ -26,7 +26,7 @@ from absl import logging
 from gfootball.env import config as cfg
 from gfootball.env import constants
 from gfootball.env import football_action_set
-from gfootball.env import football_env_wrapper
+from gfootball.env import football_env_core
 from gfootball.env import observation_rotation
 import gym
 import numpy as np
@@ -44,7 +44,7 @@ class FootballEnv(gym.Env):
     self._agent_left_position = -1
     self._agent_right_position = -1
     self._players = self._construct_players(config['players'], player_config)
-    self._env = football_env_wrapper.FootballEnvWrapper(self._config)
+    self._env = football_env_core.FootballEnvCore(self._config)
     self._num_actions = len(football_action_set.get_action_set(self._config))
     self._cached_observation = None
 
@@ -209,10 +209,15 @@ class FootballEnv(gym.Env):
 
   def set_state(self, state):
     self._cached_observation = None
-    return self._env.set_state(state)
+    self._env.set_state(state)
 
   def tracker_setup(self, start, end):
     self._env.tracker_setup(start, end)
 
   def render(self, mode='human'):
+    self._cached_observation = None
     return self._env.render(mode=mode)
+
+  def disable_render(self):
+    self._cached_observation = None
+    return self._env.disable_render()

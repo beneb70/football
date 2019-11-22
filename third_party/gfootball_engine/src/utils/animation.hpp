@@ -143,7 +143,10 @@ e_FunctionType StringToFunctionType(e_DefString fun);
         return "player";
       case body_part_max:
         return "body_part_max";
+      default:
+        Log(e_FatalError, "", "", "Body part not known");
     }
+    return "";
   }
 
   static BodyPart BodyPartFromString(const std::string part) { DO_VALIDATION;

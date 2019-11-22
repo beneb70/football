@@ -78,12 +78,12 @@ void MentalImage::ProcessState(EnvState* state, Match* match) {
   state->process(size);
   ballPredictions.resize(size);
   for (auto& b : ballPredictions) {
-    if (state->getContext()->scenario_config->reverse_team_processing &&
+    if (state->getConfig()->reverse_team_processing &&
         !ballPredictions_mirrored) {
       b.Mirror();
     }
     state->process(b);
-    if (state->getContext()->scenario_config->reverse_team_processing &&
+    if (state->getConfig()->reverse_team_processing &&
         !ballPredictions_mirrored) {
       b.Mirror();
     }

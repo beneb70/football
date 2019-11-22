@@ -26,7 +26,7 @@ namespace blunted {
 
   class Gui2WindowManager;
 
-  class Gui2View : public boost::signals2::trackable {
+  class Gui2View {
 
     public:
       Gui2View(Gui2WindowManager *windowManager, const std::string &name, float x_percent, float y_percent, float width_percent, float height_percent);
@@ -47,7 +47,6 @@ namespace blunted {
       virtual void CenterPosition();
       virtual void GetImages(std::vector < boost::intrusive_ptr<Image2D> > &target);
 
-      virtual void Process();
       virtual void Redraw() { DO_VALIDATION;}
 
       bool IsFocussed();
@@ -69,9 +68,6 @@ namespace blunted {
 
       void SetRecursiveZPriority(int prio);
       virtual void SetZPriority(int prio);
-      virtual int GetZPriority() const { return zPriority; }
-
-      boost::signals2::signal<void()> sig_OnClose;
 
     protected:
       Gui2WindowManager *windowManager;
@@ -90,9 +86,6 @@ namespace blunted {
       bool isSelectable = false;
       bool isInFocusPath = false;
       bool isOverlay = false;
-
-      int zPriority = 0;
-
   };
 
 }

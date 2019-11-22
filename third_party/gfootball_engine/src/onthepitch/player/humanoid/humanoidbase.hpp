@@ -232,7 +232,6 @@ class HumanoidBase {
 
     void PrepareFullbodyModel(std::map<Vector3, Vector3> &colorCoords);
     void UpdateFullbodyNodes(bool mirror);
-    bool NeedsModelUpdate();
     void UpdateFullbodyModel(bool updateSrc = false);
 
     virtual void Process();
@@ -364,9 +363,6 @@ class HumanoidBase {
     // Seems to contain current animation context.
     AnimApplyBuffer animApplyBuffer;
 
-    bool buf_LowDetailMode = false;
-    int buf_bodyUpdatePhase = 0;
-
     BiasedOffsets offsets;
 
     Anim currentAnim;
@@ -410,7 +406,7 @@ class HumanoidBase {
     // Should be dynamically retrieved from match, don't cache.
     int mentalImageTime = 0;
 
-    float zMultiplier = 0.0f;
+    const float zMultiplier;
     MovementHistory movementHistory;
     bool mirrored = false;
 };

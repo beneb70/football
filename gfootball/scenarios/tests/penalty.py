@@ -20,8 +20,8 @@
 from . import *
 
 def build_scenario(builder):
-  builder.SetFlag('game_duration', 30)
-  builder.SetFlag('deterministic', True)
+  builder.config().game_duration = 30
+  builder.config().deterministic = True
   builder.SetBallPosition(-0.72, 0.0)
   builder.SetTeam(Team.e_Left)
   builder.AddPlayer(-1.00, 0.00, e_PlayerRole_GK, True)

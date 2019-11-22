@@ -172,10 +172,8 @@ void Spatial::SetName(const std::string &name) {
   }
 
   void Spatial::InvalidateBoundingVolume() {
-    DO_VALIDATION;
     bool changed = false;
     if (aabb.dirty == false) {
-      DO_VALIDATION;
       aabb.dirty = true;
       aabb.aabb.Reset();
       changed = true;

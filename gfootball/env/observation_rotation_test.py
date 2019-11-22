@@ -20,7 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 from gfootball.env import config
-from gfootball.env import constants
 from gfootball.env import football_action_set
 from gfootball.env import observation_rotation
 import numpy as np
@@ -50,13 +49,13 @@ class ObservationRotationTest(tf.test.TestCase):
     observation['ball_rotation'] = np.random.rand(3) - 0.5
     observation['ball_owned_team'] = 0
     observation['ball_owned_player'] = 7
-    index_active = np.random.randint(low=0, high=num_players - 1)
     observation['left_agent_controlled_player'] = [4]
     observation['right_agent_controlled_player'] = [6]
     observation['game_mode'] = 123
-    index_active = np.random.randint(low=0, high=num_players - 1)
-    observation['left_agent_sticky_actions'] = [[np.random.rand(2) for _ in range(11)]]
-    observation['right_agent_sticky_actions'] = [[np.random.rand(2) for _ in range(11)]]
+    observation['left_agent_sticky_actions'] = [
+        [np.random.rand(2) for _ in range(10)]]
+    observation['right_agent_sticky_actions'] = [
+        [np.random.rand(2) for _ in range(10)]]
     observation['score'] = [3, 5]
     observation['steps_left'] = 45
     # Flipping twice the observation is the identity.
@@ -64,7 +63,8 @@ class ObservationRotationTest(tf.test.TestCase):
         observation, cfg)
     original_observation = observation_rotation.flip_observation(
         flipped_observation, cfg)
-    self.assertEqual(str(tuple(sorted(original_observation.items()))), str(tuple(sorted(observation.items()))))
+    self.assertEqual(str(tuple(sorted(original_observation.items()))),
+                     str(tuple(sorted(observation.items()))))
 
   def testActionFlipping(self):
     cfg = config.Config()

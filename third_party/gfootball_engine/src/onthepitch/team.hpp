@@ -68,9 +68,9 @@ class Team {
     int GetActivePlayersCount() const;
 
     unsigned int GetHumanGamerCount() const { return humanGamers.size(); }
-    void GetHumanControllers(std::vector<HumanController*>& v) const {
+    void GetHumanControllers(std::vector<HumanController*>& v) {
       for (auto& g: humanGamers) { DO_VALIDATION;
-        v.push_back(g->GetHumanController());
+        v.push_back(g.GetHumanController());
       }
     }
     void AddHumanGamer(IHIDevice *hid, e_PlayerColor color);
@@ -144,7 +144,7 @@ class Team {
     boost::intrusive_ptr<Node> teamNode;
     boost::intrusive_ptr<Node> playerNode;
 
-    std::vector<HumanGamer*> humanGamers;
+    std::vector<HumanGamer> humanGamers;
 
     // humanGamers index whose turn it is
     // begin() == due next

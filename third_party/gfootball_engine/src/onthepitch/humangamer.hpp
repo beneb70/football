@@ -42,20 +42,21 @@ class HumanGamer {
 
   public:
     HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color);
-    virtual ~HumanGamer();
+    HumanGamer() {}
+    ~HumanGamer();
 
     Player *GetSelectedPlayer() const { return selectedPlayer; }
     void SetSelectedPlayer(Player* player);
     IHIDevice *GetHIDevice() { DO_VALIDATION; return hid; }
-    HumanController* GetHumanController() { DO_VALIDATION; return controller.get(); }
+    HumanController* GetHumanController() { DO_VALIDATION; return &controller; }
     void ProcessState(EnvState *state);
     e_PlayerColor GetPlayerColor() const { return playerColor; }
 
   protected:
     Team *team = nullptr;
     IHIDevice *hid = nullptr;
-    std::unique_ptr<HumanController> controller = nullptr;
-    const e_PlayerColor playerColor;
+    HumanController controller;
+    e_PlayerColor playerColor;
     Player *selectedPlayer = nullptr;
 };
 

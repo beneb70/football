@@ -126,7 +126,7 @@ namespace blunted {
   bool Vector3::operator == (const Vector3 &vector) const {
     if (coords[0] == vector.coords[0] &&
         coords[1] == vector.coords[1] &&
-        coords[2] == vector.coords[2]) { DO_VALIDATION;
+        coords[2] == vector.coords[2]) {
       return true;
     }
     return false;

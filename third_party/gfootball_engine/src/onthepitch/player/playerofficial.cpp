@@ -71,11 +71,6 @@ void PlayerOfficial::Process() {
   CastHumanoid()->Process();
 }
 
-void PlayerOfficial::PreparePutBuffers() {
-  DO_VALIDATION;
-  PlayerBase::PreparePutBuffers();
-}
-
 void PlayerOfficial::FetchPutBuffers() {
   DO_VALIDATION;
   PlayerBase::FetchPutBuffers();

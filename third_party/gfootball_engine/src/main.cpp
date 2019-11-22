@@ -63,47 +63,38 @@ GameContext& GetContext() {
 void SetGame(GameEnv* c) { game = c; }
 
 boost::shared_ptr<Scene2D> GetScene2D() {
-  DO_VALIDATION;
   return game->context->scene2D;
 }
 
 boost::shared_ptr<Scene3D> GetScene3D() {
-  DO_VALIDATION;
   return game->context->scene3D;
 }
 
 GraphicsSystem* GetGraphicsSystem() {
-  DO_VALIDATION;
-  return game->context->graphicsSystem.get();
+  return &game->context->graphicsSystem;
 }
 
 boost::shared_ptr<GameTask> GetGameTask() {
-  DO_VALIDATION;
   return game->context->gameTask;
 }
 
 boost::shared_ptr<MenuTask> GetMenuTask() {
-  DO_VALIDATION;
   return game->context->menuTask;
 }
 
 Properties* GetConfiguration() {
-  DO_VALIDATION;
   return game->context->config;
 }
 
 ScenarioConfig& GetScenarioConfig() {
-  DO_VALIDATION;
-  return *(game->context->scenario_config);
+  return game->scenario_config;
 }
 
 GameConfig& GetGameConfig() {
-  DO_VALIDATION;
-  return game->context->game_config;
+  return game->game_config;
 }
 
 const std::vector<IHIDevice*>& GetControllers() {
-  DO_VALIDATION;
   return game->context->controllers;
 }
 
@@ -114,23 +105,22 @@ void randomize(unsigned int seed) {
   randomseed(seed); // for the boost random
 }
 
-void run_game(Properties* input_config) {
+void run_game(Properties* input_config, bool render) {
   DO_VALIDATION;
   game->context->config = input_config;
   Initialize(*game->context->config);
   randomize(0);
 
   // initialize systems
-  game->context->graphicsSystem.reset(new GraphicsSystem());
-  game->context->graphicsSystem->Initialize(*game->context->config);
+  game->context->graphicsSystem.Initialize(render);
 
   // init scenes
 
   game->context->scene2D.reset(new Scene2D(*game->context->config));
-  game->context->graphicsSystem->Create2DScene(game->context->scene2D);
+  game->context->graphicsSystem.Create2DScene(game->context->scene2D);
   game->context->scene2D->Init();
   game->context->scene3D.reset(new Scene3D());
-  game->context->graphicsSystem->Create3DScene(game->context->scene3D);
+  game->context->graphicsSystem.Create3DScene(game->context->scene3D);
   game->context->scene3D->Init();
 
   for (int x = 0; x < 2 * MAX_PLAYERS; x++) {
@@ -202,17 +192,14 @@ void Tracker::verify_snapshot(long pos, int line, const char* file,
     Log(blunted::e_FatalError, "State comparison failure", "", "");
   }
   if (!game->context->gameTask->GetMatch()) return;
-  if (verify_state) {
-    EnvState reader1(game->context, "");
-    game->ProcessState(&reader1);
-    EnvState reader2(waiting_game->context, "", reader1.GetState());
-    waiting_game->ProcessState(&reader2);
-  }
+  EnvState reader1(game, "");
+  game->ProcessState(&reader1);
+  EnvState reader2(waiting_game, "", reader1.GetState());
+  waiting_game->ProcessState(&reader2);
 }
 
 void GameContext::ProcessState(EnvState* state) {
   state->process((void*)&rng, sizeof(rng));
-  state->process((void*)&rng_non_deterministic, sizeof(rng_non_deterministic));
 //  scenario_config->ProcessState(state);
 #ifdef FULL_VALIDATION
   anims->ProcessState(state);

@@ -85,13 +85,10 @@ class Config(object):
         'display_game_stats': True,
         'dump_full_episodes': False,
         'dump_scores': False,
-        'left_team_difficulty': 1.0,
-        'right_team_difficulty': 0.6,
         'players': ['agent:left_players=1'],
         'level': '11_vs_11_stochastic',
         'physics_steps_per_frame': 10,
         'real_time': False,
-        'render': False,
         'tracesdir': '/tmp/dumps',
         'write_video': False
     }
@@ -143,13 +140,6 @@ class Config(object):
   def update(self, config):
     self._values.update(config)
 
-  def GameConfig(self):
-    self._game_config.render_mode = libgame.e_RenderingMode.e_Onscreen if self[
-        'render'] else libgame.e_RenderingMode.e_Disabled
-    self._game_config.high_quality = self['render']
-    self._game_config.physics_steps_per_frame = self['physics_steps_per_frame']
-    return self._game_config
-
   def ScenarioConfig(self):
     return self._scenario_cfg
 
@@ -157,13 +147,6 @@ class Config(object):
     if 'episode_number' not in self._values:
       self._values['episode_number'] = 0
     self._values['episode_number'] += 1
-    self._scenario_values = {
-        'deterministic': False,
-        'end_episode_on_score': False,
-        'end_episode_on_possession_change': False,
-        'end_episode_on_out_of_play': False,
-        'game_duration': 3000,
-        'offsides': True,
-    }
+    self._scenario_values = {}
     from gfootball.env import scenario_builder
     self._scenario_cfg = scenario_builder.Scenario(self).ScenarioConfig()

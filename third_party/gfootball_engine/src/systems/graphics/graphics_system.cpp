@@ -30,22 +30,19 @@ GraphicsSystem::GraphicsSystem() { DO_VALIDATION; }
 
 GraphicsSystem::~GraphicsSystem() { DO_VALIDATION; }
 
-void GraphicsSystem::Initialize(const Properties &config) {
+void GraphicsSystem::Initialize(bool render) {
   DO_VALIDATION;
 
-  // start thread for renderer
-  std::string renderer = config.Get("graphics3d_renderer", "opengl");
-
-  if (renderer == "opengl" || renderer == "egl" || renderer == "osmesa")
+  if (render) {
     renderer3DTask = new OpenGLRenderer3D();
-  if (renderer == "mock") renderer3DTask = new MockRenderer3D();
-  width = config.GetInt("context_x", 1280);
-  height = config.GetInt("context_y", 720);
-  bpp = config.GetInt("context_bpp", 32);
-  bool fullscreen = config.GetBool("context_fullscreen", false);
-
+  } else {
+    renderer3DTask = new MockRenderer3D();
+  }
+  width = 1280;
+  height = 720;
+  bpp = 32;
   if (!static_cast<Renderer3D *>(renderer3DTask)
-           ->CreateContext(width, height, bpp, fullscreen)) {
+           ->CreateContext(width, height, bpp, false)) {
     DO_VALIDATION;
     Log(e_FatalError, "GraphicsSystem", "Initialize",
         "Could not create context");
@@ -54,8 +51,19 @@ void GraphicsSystem::Initialize(const Properties &config) {
   task = new GraphicsTask(this);
 }
 
+void GraphicsSystem::SetContext() {
+  if (renderer3DTask) {
+    renderer3DTask->SetContext();
+  }
+}
+
+void GraphicsSystem::DisableContext() {
+  if (renderer3DTask) {
+    renderer3DTask->DisableContext();
+  }
+}
+
 const screenshoot &GraphicsSystem::GetScreen() {
-  DO_VALIDATION;
   return renderer3DTask->GetScreen();
 }
 

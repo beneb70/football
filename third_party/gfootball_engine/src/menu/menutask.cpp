@@ -82,35 +82,9 @@ MenuTask::MenuTask(float aspectRatio, float margin, TTF_Font *defaultFont,
   // 8 == real madrid
   queuedFixture.team1KitNum = 2;
   queuedFixture.team2KitNum = 2;
-  menuAction = e_MenuAction_Menu;
 }
 
 MenuTask::~MenuTask() {
   DO_VALIDATION;
   delete windowManager->GetPageFactory();
-}
-
-void MenuTask::MenuAction() {
-  DO_VALIDATION;
-  windowManager->GetPagePath()->Clear();
-  GetGameTask()->StopMatch();
-  windowManager->GetPageFactory()->CreatePage((int)e_PageID_LoadingMatch, 0);
-}
-
-void MenuTask::GameAction() {
-  DO_VALIDATION;
-  GetGameTask()->StartMatch();
-}
-
-void MenuTask::ProcessPhase() {
-  DO_VALIDATION;
-  Gui2Task::ProcessPhase();
-  if (menuAction == e_MenuAction_Menu) {
-    DO_VALIDATION;
-    MenuAction();
-  } else if (menuAction == e_MenuAction_Game) {
-    DO_VALIDATION;
-    GameAction();
-  }
-  menuAction = e_MenuAction_None;
 }

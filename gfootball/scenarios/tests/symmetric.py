@@ -20,10 +20,10 @@
 from . import *
 
 def build_scenario(builder):
-  builder.SetFlag('game_duration', 3000)
-  builder.SetFlag('left_team_difficulty', 0.95)
-  builder.SetFlag('right_team_difficulty', 0.95)
-  builder.SetFlag('deterministic', False)
+  builder.config().game_duration = 3000
+  builder.config().left_team_difficulty = 0.95
+  builder.config().right_team_difficulty = 0.95
+  builder.config().deterministic = False
   builder.SetTeam(Team.e_Left)
   builder.AddPlayer(-1.000000, 0.000000, e_PlayerRole_GK)
   builder.AddPlayer(-0.050000, 0.000000, e_PlayerRole_RM)

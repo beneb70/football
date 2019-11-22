@@ -32,7 +32,6 @@ Gui2View::Gui2View(Gui2WindowManager *windowManager, const std::string &name,
       height_percent(height_percent) {
   DO_VALIDATION;
   parent = 0;
-  zPriority = 0;
   isVisible = false;
   isSelectable = false;
   isInFocusPath = false;
@@ -48,10 +47,6 @@ void Gui2View::Exit() {
   DO_VALIDATION;
   CHECK(!exit_called);
   exit_called = true;
-
-  // printf("exiting %s.. ", name.c_str());
-
-  this->sig_OnClose();
 
   if (IsFocussed()) windowManager->SetFocus(0);
 
@@ -183,14 +178,6 @@ void Gui2View::SetPosition(float x_percent, float y_percent) {
     DO_VALIDATION;
   }
 
-  void Gui2View::Process() {
-    DO_VALIDATION;
-    for (unsigned int i = 0; i < children.size(); i++) {
-      DO_VALIDATION;
-      children[i]->Process();
-    }
-  }
-
   bool Gui2View::IsFocussed() {
     DO_VALIDATION;
     return windowManager->IsFocussed(this);
@@ -245,8 +232,6 @@ void Gui2View::SetPosition(float x_percent, float y_percent) {
 
   void Gui2View::SetZPriority(int prio) {
     DO_VALIDATION;
-    zPriority = prio;
-
     std::vector < boost::intrusive_ptr<Image2D> > images;
     GetImages(images);
     for (unsigned int i = 0; i < images.size(); i++) {

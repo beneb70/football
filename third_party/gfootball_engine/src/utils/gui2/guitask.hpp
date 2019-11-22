@@ -28,7 +28,6 @@ namespace blunted {
     public:
       Gui2Task(boost::shared_ptr<Scene2D> scene2D, float aspectRatio, float margin);
       ~Gui2Task();
-      void ProcessPhase();
       Gui2WindowManager *GetWindowManager() { DO_VALIDATION; return this->windowManager; }
     protected:
       Gui2WindowManager *windowManager;

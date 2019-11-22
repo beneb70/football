@@ -140,6 +140,9 @@ def softmax(x):
 
 
 def write_dump(name, trace, config):
+  if len(trace) == 0:
+    logging.warning('No data to write to the dump.')
+    return False
   if config['write_video']:
     fd, temp_path = tempfile.mkstemp(suffix='.avi')
     if HIGH_RES:
@@ -153,8 +156,7 @@ def write_dump(name, trace, config):
         constants.PHYSICS_STEPS_PER_SECOND / config['physics_steps_per_frame'],
         frame_dim)
     frame_cnt = 0
-    if len(trace) > 0:
-      time = trace[0]._time
+    time = trace[0]._time
     for o in trace:
       frame_cnt += 1
       frame = get_frame(o)

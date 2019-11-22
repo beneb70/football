@@ -33,22 +33,15 @@
 
 using std::string;
 
-void GameEnv::do_step(int count, bool render) {
+void GameEnv::do_step(int count) {
   DO_VALIDATION;
-  while (!context->gameTask->GetMatch() || count--) {
-    context->menuTask->ProcessPhase();
+  while (count--) {
     DO_VALIDATION;
     context->gameTask->ProcessPhase();
-    DO_VALIDATION;
-    if (render) {
-      DO_VALIDATION;
-      context->graphicsSystem->GetTask()->GetPhase();
-      DO_VALIDATION;
-      context->graphicsSystem->GetTask()->ProcessPhase();
-      DO_VALIDATION;
-    }
   }
-  DoValidation(__LINE__, __FILE__);
+  if (context->gameTask->GetMatch()->IsInPlay()) {
+    DoValidation(__LINE__, __FILE__);
+  }
 }
 
 float Position::env_coord(int index) const {
@@ -78,7 +71,6 @@ void GameEnv::setConfig(ScenarioConfig& scenario_config) {
       scenario_config.ball_position.coords[0] * X_FIELD_SCALE;
   scenario_config.ball_position.coords[1] =
       scenario_config.ball_position.coords[1] * Y_FIELD_SCALE;
-  context->scenario_config = &scenario_config;
   std::vector<SideSelection> setup = GetMenuTask()->GetControllerSetup();
   CHECK(setup.size() == 2 * MAX_PLAYERS);
   int controller = 0;
@@ -98,16 +90,16 @@ void GameEnv::setConfig(ScenarioConfig& scenario_config) {
     DO_VALIDATION;
     setup[controller++].side = 0;
   }
+  this->scenario_config = scenario_config;
   GetMenuTask()->SetControllerSetup(setup);
 }
 
-void GameEnv::start_game(GameConfig& game_config) {
+void GameEnv::start_game() {
   assert(context == nullptr);
   std::cout.precision(17);
   context = new GameContext();
-  SetGame(this);
+  ContextHolder c(this);
   // feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
-  context->game_config = game_config;
   std::cout << std::unitbuf;
 
   char* data_dir = getenv("GFOOTBALL_DATA_DIR");
@@ -123,20 +115,9 @@ void GameEnv::start_game(GameConfig& game_config) {
     config->Set("font_filename", font_file);
   }
   config->Set("game", 0);
-  // Enable AI.
-  config->SetBool("ai_keyboard", true);
-  if (game_config.render_mode == e_Disabled) {
-    DO_VALIDATION;
-    config->Set("graphics3d_renderer", "mock");
-  } else if (game_config.render_mode == e_Offscreen) {
-    DO_VALIDATION;
-    setenv("DISPLAY", ":63", 1);
-    config->Set("graphics3d_renderer", "egl");
-  }
-  run_game(config);
+  run_game(config, game_config.render);
   auto scenario_config = ScenarioConfig::make();
-  setConfig(*scenario_config);
-  do_step(1, GetScenarioConfig().render);
+  reset(*scenario_config, false);
   DO_VALIDATION;
 }
 
@@ -299,19 +280,17 @@ void GameEnv::action(int action, bool left_team, int player) {
 }
 
 std::string GameEnv::get_state() {
-  SetGame(this);
-  EnvState reader(context, "");
+  ContextHolder c(this);
+  EnvState reader(this, "");
   ProcessState(&reader);
   return reader.GetState();
 }
 
 void GameEnv::set_state(const std::string& state) {
-  DO_VALIDATION;
   SetGame(this);
-  EnvState writer(context, state);
+  EnvState writer(this, state);
   ProcessState(&writer);
   if (!writer.eos()) {
-    DO_VALIDATION;
     Log(e_FatalError, "football", "main", "corrupted state");
   }
 }
@@ -326,10 +305,13 @@ void GameEnv::step() {
     auto start = std::chrono::system_clock::now();
     for (int x = 1; x <= steps_to_do; x++) {
       DO_VALIDATION;
+      do_step(1);
       bool render_current_step =
           x * last_step_rendered_frames_ / steps_to_do !=
           (x - 1) * last_step_rendered_frames_ / steps_to_do;
-      do_step(1, render_current_step);
+      if (render_current_step) {
+        render();
+      }
     }
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now() - start);
@@ -343,8 +325,10 @@ void GameEnv::step() {
       last_step_rendered_frames_++;
     }
   } else {
-    do_step(steps_to_do - 1, false);
-    do_step(1, GetScenarioConfig().render);
+    do_step(steps_to_do);
+    if (GetGameConfig().render) {
+      render();
+    }
   }
   if (context->gameTask->GetMatch()->IsInPlay()) {
     DO_VALIDATION;
@@ -357,16 +341,24 @@ void GameEnv::step() {
 }
 
 void GameEnv::ProcessState(EnvState* state) {
-  DO_VALIDATION;
   state->process(&this->state, sizeof(this->state));
   state->process(waiting_for_game_count);
   context->gameTask->GetMatch()->ProcessState(state);
   context->ProcessState(state);
 }
 
-void GameEnv::reset(ScenarioConfig& game_config) {
+void GameEnv::render(bool swap_buffer) {
+  GetTracker()->setDisabled(true);
+  context->gameTask->PrepareRender();
+  context->graphicsSystem.GetTask()->Render(swap_buffer);
+  GetTracker()->setDisabled(false);
+}
+
+void GameEnv::reset(ScenarioConfig& game_config, bool animations) {
   DO_VALIDATION;
-  SetGame(this);
+  ContextHolder c(this);
+  // Reset call disables tracker.
+  GetTracker()->setDisabled(true);
   context->step = -1;
   waiting_for_game_count = 0;
   setConfig(game_config);
@@ -378,15 +370,19 @@ void GameEnv::reset(ScenarioConfig& game_config) {
   context->surface_manager.RemoveUnused();
   context->texture_manager.RemoveUnused();
   context->vertices_manager.RemoveUnused();
-  GetMenuTask()->SetMenuAction(e_MenuAction_Menu);
-  for (int x = 0; x < 2; x++) {
-    DO_VALIDATION;
-    context->menuTask->ProcessPhase();
-    context->gameTask->ProcessPhase();
-    if (GetScenarioConfig().render) {
-      DO_VALIDATION;
-      context->graphicsSystem->GetTask()->GetPhase();
-      context->graphicsSystem->GetTask()->ProcessPhase();
-    }
+  GetMenuTask()->GetWindowManager()->GetRoot()->SetRecursiveZPriority(0);
+  DO_VALIDATION;
+  GetMenuTask()->GetWindowManager()->GetPagePath()->Clear();
+  bool already_loaded = GetGameTask()->StopMatch();
+  GetMenuTask()->SetMatchData(new MatchData());
+  if (!already_loaded) {
+    // We show loading page only the first time when env. is started.
+    GetMenuTask()->GetWindowManager()->GetPageFactory()->CreatePage(1, 0);
   }
+  if (GetGameConfig().render) {
+    GetTracker()->setDisabled(true);
+    context->graphicsSystem.GetTask()->Render(true);
+    GetTracker()->setDisabled(false);
+  }
+  GetGameTask()->StartMatch(animations);
 }

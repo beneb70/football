@@ -20,8 +20,8 @@
 from . import *
 
 def build_scenario(builder):
-  builder.SetFlag('game_duration', 30)
-  builder.SetFlag('deterministic', False)
+  builder.config().game_duration = 30
+  builder.config().deterministic = False
   if builder.EpisodeNumber() % 2 == 0:
     builder.SetBallPosition(-0.9, 0.3)
   else:

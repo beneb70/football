@@ -32,20 +32,6 @@ Gui2Page::Gui2Page(Gui2WindowManager *windowManager,
 
 Gui2Page::~Gui2Page() { DO_VALIDATION; }
 
-void Gui2Page::GoBack() {
-  DO_VALIDATION;
-  windowManager->GetPagePath()->Pop();
-  if (!windowManager->GetPagePath()->Empty()) {
-    DO_VALIDATION;
-    Gui2PageData prevPage = windowManager->GetPagePath()->GetLast();
-    windowManager->GetPagePath()
-        ->Pop();  // pop previous page from path too, since it is going to be
-                  // added with the createpage again
-    windowManager->GetPageFactory()->CreatePage(prevPage);
-  }  // else: no mo menus :[
-  return;
-}
-
 Gui2PageFactory::Gui2PageFactory() { DO_VALIDATION; }
 
 Gui2PageFactory::~Gui2PageFactory() { DO_VALIDATION; }
@@ -59,7 +45,6 @@ Gui2Page *Gui2PageFactory::CreatePage(int pageID, void *data) {
   DO_VALIDATION;
   Gui2PageData pageData;
   pageData.pageID = pageID;
-  pageData.data = data;
   Gui2Page *page = CreatePage(pageData);
   return page;
   // not going to work: pointer is not persistent, while pagedata is.

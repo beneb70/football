@@ -255,18 +255,22 @@ const float FORMATION_Y_SCALE = -2.36f;
 struct FormationEntry {
   FormationEntry() { DO_VALIDATION;}
   // Constructor accepts environment coordinates.
-  FormationEntry(float x, float y, e_PlayerRole role, bool lazy)
+  FormationEntry(float x, float y, e_PlayerRole role, bool lazy,
+                 bool controllable)
       : databasePosition(x, y * FORMATION_Y_SCALE, 0),
         position(x, y * FORMATION_Y_SCALE, 0),
         start_position(x, y * FORMATION_Y_SCALE, 0),
         role(role),
-        lazy(lazy) { DO_VALIDATION;
+        lazy(lazy),
+        controllable(controllable) {
+    DO_VALIDATION;
   }
   bool operator == (const FormationEntry& f) const {
     return role == f.role &&
         lazy == f.lazy &&
         databasePosition == f.databasePosition &&
-        position == f.position;
+        position == f.position &&
+        controllable == f.controllable;
   }
   Vector3 position_env() { DO_VALIDATION;
     return Vector3(position.coords[0],
@@ -279,12 +283,15 @@ struct FormationEntry {
     state->process(position);
     state->process(start_position);
     state->process(lazy);
+    state->process(controllable);
   }
   Vector3 databasePosition;
   Vector3 position; // adapted to player role (combination of databasePosition and hardcoded role position)
   Vector3 start_position;
   e_PlayerRole role = e_PlayerRole_GK;
   bool lazy = false; // Computer doesn't perform any actions for lazy player.
+  // Can be controlled by the player?
+  bool controllable = true;
 };
 
 struct PlayerImage {

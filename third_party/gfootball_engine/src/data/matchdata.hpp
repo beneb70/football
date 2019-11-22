@@ -31,7 +31,7 @@ class MatchData {
     TeamData& GetTeamData(int id) { DO_VALIDATION; return teamData[id]; }
     int GetGoalCount(int id) { DO_VALIDATION; return goalCount[id]; }
     void SetGoalCount(int id, int amount) { DO_VALIDATION; goalCount[id] = amount; }
-    void AddPossessionTime_10ms(int teamID);
+    void AddPossessionTime(int teamID, unsigned long time);
     float GetPossessionFactor_60seconds() { DO_VALIDATION;
       return possession60seconds / 60.0f;
     }  // REMEMBER THESE ARE IRL INGAME SECONDS (because, I guess the tactics

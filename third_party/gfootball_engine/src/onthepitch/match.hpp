@@ -52,7 +52,7 @@ struct PlayerBounce {
 class Match {
 
   public:
-    Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers);
+    Match(MatchData *matchData, const std::vector<IHIDevice*> &controllers, bool init_animation);
     virtual ~Match();
 
     void Exit();
@@ -75,7 +75,6 @@ class Match {
 
     void ResetSituation(const Vector3 &focusPos);
 
-    bool GetPause() { DO_VALIDATION; return pause; }
     void SetMatchPhase(e_MatchPhase newMatchPhase);
     e_MatchPhase GetMatchPhase() const { return matchPhase; }
 
@@ -120,10 +119,9 @@ class Match {
 
     float GetAveragePossessionSide(int time_ms) const { return possessionSideHistory.GetAverage(time_ms); }
 
-    unsigned long GetIterations() const { return iterations; }
     unsigned long GetMatchTime_ms() const { return matchTime_ms; }
     unsigned long GetActualTime_ms() const { return actualTime_ms; }
-
+    void BumpActualTime_ms(unsigned long time);
     void UpdateIngameCamera();
 
 
@@ -131,7 +129,8 @@ class Match {
     void GetTeamState(SharedInfo *state, std::map<IHIDevice*, int>& controller_mapping, int team_id);
     void GetState(SharedInfo* state);
     void ProcessState(EnvState* state);
-    void Process();
+    bool Process();
+    void UpdateCamera();
     void PreparePutBuffers();
     void FetchPutBuffers();
     void Put();
@@ -153,12 +152,6 @@ class Match {
 
     void UploadGoalNetting();
 
-    //void AddMissingAnim(const MissingAnim &someAnim);
-
-    // not sure about how signals work in this game at the moment. whole menu/game thing needs a rethink, i guess
-    boost::signals2::signal<void(Match*)> sig_OnShortReplayMoment;
-    boost::signals2::signal<void(Match*)> sig_OnCreatedMatch;
-    boost::signals2::signal<void(Match*)> sig_OnExitedMatch;
     int FirstTeam() { DO_VALIDATION; return first_team; }
     int SecondTeam() { DO_VALIDATION; return second_team; }
     bool isBallMirrored() { DO_VALIDATION; return ball_mirrored; }
@@ -189,7 +182,6 @@ class Match {
     boost::intrusive_ptr<Node> sunNode;
 
     boost::intrusive_ptr<Node> stadiumNode;
-    boost::intrusive_ptr<Node> goalsNode;
 
     const std::vector<IHIDevice*> &controllers;
 
@@ -206,7 +198,6 @@ class Match {
     unsigned long actualTime_ms = 0;
     unsigned long goalScoredTimer = 0;
 
-    bool pause = false;
     e_MatchPhase matchPhase = e_MatchPhase_PreMatch; // 0 - first half; 1 - second half; 2 - 1st extra time; 3 - 2nd extra time; 4 - penalties
     bool inPlay = false;
     bool inSetPiece = false; // Whether game is in special mode (corner etc...)
@@ -219,8 +210,6 @@ class Match {
     Team* bestPossessionTeam = 0;
     Player *designatedPossessionPlayer;
     Player *ballRetainer;
-
-    boost::intrusive_ptr<Node> fullbodyNode;
 
     ValueHistory<float> possessionSideHistory;
 

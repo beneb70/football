@@ -87,19 +87,18 @@ void Geometry::SetGeometryData(
 
 void Geometry::OnUpdateGeometryData(bool updateMaterials) {
   DO_VALIDATION;
-  if (!GetScenarioConfig().render) {
-    DO_VALIDATION;
-    return;
+  GetTracker()->setDisabled(true);
+  if (GetGameConfig().render) {
+    int observersSize = observers.size();
+    for (int i = 0; i < observersSize; i++) {
+      DO_VALIDATION;
+      IGeometryInterpreter *geometryInterpreter =
+          static_cast<IGeometryInterpreter *>(observers[i].get());
+      geometryInterpreter->OnUpdateGeometry(this, updateMaterials);
+    }
+    InvalidateBoundingVolume();
   }
-  int observersSize = observers.size();
-  for (int i = 0; i < observersSize; i++) {
-    DO_VALIDATION;
-    IGeometryInterpreter *geometryInterpreter =
-        static_cast<IGeometryInterpreter *>(observers[i].get());
-    geometryInterpreter->OnUpdateGeometry(this, updateMaterials);
-  }
-
-  InvalidateBoundingVolume();
+  GetTracker()->setDisabled(false);
 }
 
 boost::intrusive_ptr<Resource<GeometryData> > Geometry::GetGeometryData() {
@@ -139,33 +138,32 @@ void Geometry::RecursiveUpdateSpatialData(e_SpatialDataType spatialDataType,
   InvalidateSpatialData();
   InvalidateBoundingVolume();
 
-  if (!GetScenarioConfig().render) {
-    DO_VALIDATION;
-    return;
-  }
-
-  int observersSize = observers.size();
-  for (int i = 0; i < observersSize; i++) {
-    DO_VALIDATION;
-    if (observers[i]->GetSystemType() != excludeSystem) {
+  GetTracker()->setDisabled(true);
+  if (GetGameConfig().render) {
+    int observersSize = observers.size();
+    for (int i = 0; i < observersSize; i++) {
       DO_VALIDATION;
-      IGeometryInterpreter *geometryInterpreter =
-          static_cast<IGeometryInterpreter *>(observers[i].get());
-      if (spatialDataType == e_SpatialDataType_Position) {
+      if (observers[i]->GetSystemType() != excludeSystem) {
         DO_VALIDATION;
-        geometryInterpreter->OnMove(GetDerivedPosition());
-      } else if (spatialDataType == e_SpatialDataType_Rotation) {
-        DO_VALIDATION;
-        // need to update both: position relies on rotation
-        geometryInterpreter->OnMove(GetDerivedPosition());
-        geometryInterpreter->OnRotate(GetDerivedRotation());
-      } else if (spatialDataType == e_SpatialDataType_Both) {
-        DO_VALIDATION;
-        geometryInterpreter->OnMove(GetDerivedPosition());
-        geometryInterpreter->OnRotate(GetDerivedRotation());
+        IGeometryInterpreter *geometryInterpreter =
+            static_cast<IGeometryInterpreter *>(observers[i].get());
+        if (spatialDataType == e_SpatialDataType_Position) {
+          DO_VALIDATION;
+          geometryInterpreter->OnMove(GetDerivedPosition());
+        } else if (spatialDataType == e_SpatialDataType_Rotation) {
+          DO_VALIDATION;
+          // need to update both: position relies on rotation
+          geometryInterpreter->OnMove(GetDerivedPosition());
+          geometryInterpreter->OnRotate(GetDerivedRotation());
+        } else if (spatialDataType == e_SpatialDataType_Both) {
+          DO_VALIDATION;
+          geometryInterpreter->OnMove(GetDerivedPosition());
+          geometryInterpreter->OnRotate(GetDerivedRotation());
+        }
       }
     }
   }
+  GetTracker()->setDisabled(false);
 }
 
   AABB Geometry::GetAABB() const {

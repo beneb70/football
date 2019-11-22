@@ -34,8 +34,6 @@ Player::Player(Team *team, PlayerData *playerData)
     : PlayerBase(team->GetMatch(), playerData), team(team) {
   DO_VALIDATION;
   SetDesiredTimeToBall_ms(0);
-  buf_nameCaption = "...";
-  buf_debugCaption = "debug";
   nameCaption = 0;
 
   triggerControlledBallCollision = false;
@@ -330,11 +328,12 @@ void Player::Process() {
 
     CastHumanoid()->Process();
 
-    Vector3 posAfter = CastHumanoid()->GetPosition();
-
-    float distance = (posAfter - posBefore).GetLength();
-    fatigueFactorInv -= distance * 0.00003f * (2.0f - GetStaminaStat()) * (1.0f / match->GetMatchDurationFactor());
-    fatigueFactorInv = clamp(fatigueFactorInv, 0.01f, 1.0f);
+    if (match->IsInPlay()) {
+      Vector3 posAfter = CastHumanoid()->GetPosition();
+      float distance = (posAfter - posBefore).GetLength();
+      fatigueFactorInv -= distance * 0.00003f * (2.0f - GetStaminaStat()) * (1.0f / match->GetMatchDurationFactor());
+      fatigueFactorInv = clamp(fatigueFactorInv, 0.01f, 1.0f);
+    }
     // Don't send off the last player on the team.
     if (cards > 1 && cardEffectiveTime_ms <= match->GetActualTime_ms() &&
         GetTeam()->GetActivePlayersCount() > 1) {
@@ -346,36 +345,30 @@ void Player::Process() {
 
 void Player::PreparePutBuffers() {
   DO_VALIDATION;
-
   PlayerBase::PreparePutBuffers();
-
   buf_nameCaptionShowCondition = team->IsHumanControlled(this);
   if (team->GetHumanGamerCount() == 0) buf_nameCaptionShowCondition = team->GetDesignatedTeamPossessionPlayer() == this;
   e_PlayerColor playerColor = team->GetPlayerColor(this);
-  switch (playerColor) {
-    case e_PlayerColor_Green:
-      buf_playerColor = Vector3(100, 255, 140);
-      break;
-    case e_PlayerColor_Red:
-      buf_playerColor = Vector3(255, 110, 110);
-      break;
-    case e_PlayerColor_Blue:
-      buf_playerColor = Vector3(100, 140, 255);
-      break;
-    case e_PlayerColor_Yellow:
-      buf_playerColor = Vector3(255, 255, 60);
-      break;
-    case e_PlayerColor_Purple:
-      buf_playerColor = Vector3(200, 80, 200);
-      break;
-    case e_PlayerColor_Default:
-      buf_playerColor = Vector3(200, 200, 200);
-      break;
-  };
-
-  std::string name = playerData->GetLastName();
-
-  buf_nameCaption = name;
+    switch (playerColor) {
+      case e_PlayerColor_Green:
+        buf_playerColor = Vector3(100, 255, 140);
+        break;
+      case e_PlayerColor_Red:
+        buf_playerColor = Vector3(255, 110, 110);
+        break;
+      case e_PlayerColor_Blue:
+        buf_playerColor = Vector3(100, 140, 255);
+        break;
+      case e_PlayerColor_Yellow:
+        buf_playerColor = Vector3(255, 255, 60);
+        break;
+      case e_PlayerColor_Purple:
+        buf_playerColor = Vector3(200, 80, 200);
+        break;
+      case e_PlayerColor_Default:
+        buf_playerColor = Vector3(200, 200, 200);
+        break;
+    };
 
   if (GetExternalController()) {
     DO_VALIDATION;
@@ -416,7 +409,7 @@ void Player::Put2D(bool mirror) {
     nameCaption->SetOutlineColor(buf_playerColor * 0.4f);
     nameCaption->SetPosition(captionPos3D.coords[0] - w * 0.5f, captionPos3D.coords[1] - h);
 
-    nameCaption->SetCaption(buf_nameCaption);
+    nameCaption->SetCaption(playerData->GetLastName());
     nameCaption->Show();
   } else {
     nameCaption->Hide();

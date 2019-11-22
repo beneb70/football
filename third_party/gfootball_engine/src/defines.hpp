@@ -65,15 +65,19 @@ namespace blunted {
 class Player;
 class Team;
 class HumanController;
+class IHIDevice;
+class ScenarioConfig;
 class GameContext;
+class GameEnv;
 
 
 #include "base/math/vector3.hpp"
 
 class EnvState {
  public:
-  EnvState(GameContext* context, const std::string& state, const std::string reference = "");
-  GameContext* getContext() { return context; }
+  EnvState(GameEnv* game_env, const std::string& state, const std::string reference = "");
+  const ScenarioConfig* getConfig() { return scenario_config; }
+  const GameContext* getContext() { return context; }
   void process(unsigned long &value);
   void process(unsigned int &value);
   void process(bool &value);
@@ -94,6 +98,7 @@ class EnvState {
   }
   void process(Player*& value);
   void process(HumanController*& value);
+  void process(IHIDevice*& value);
   void process(Team*& value);
   bool isFailure() {
     return failure;
@@ -142,6 +147,7 @@ class EnvState {
   }
   void SetPlayers(const std::vector<Player*>& players);
   void SetHumanControllers(const std::vector<HumanController*>& controllers);
+  void SetControllers(const std::vector<IHIDevice*>& controllers);
   void SetAnimations(const std::vector<blunted::Animation*>& animations);
   void SetTeams(Team* team0, Team* team1);
   const std::string& GetState();
@@ -154,10 +160,12 @@ class EnvState {
   std::vector<Player*> players;
   std::vector<blunted::Animation*> animations;
   std::vector<Team*> teams;
-  std::vector<HumanController*> controllers;
+  std::vector<HumanController*> human_controllers;
+  std::vector<IHIDevice*> controllers;
   std::string state;
   std::string reference;
   int pos = 0;
+  ScenarioConfig* scenario_config;
   GameContext* context;
  private:
   void process(void** collection, int size, void*& element);

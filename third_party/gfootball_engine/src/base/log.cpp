@@ -55,6 +55,9 @@ void Log(e_LogType logType, std::string className, std::string methodName,
          className.c_str(), methodName.c_str(), message.c_str());
 
   if (logType == e_FatalError) {
+    print_stacktrace();
+    int *foo = (int *)-1;  // make a bad pointer
+    printf("%d\n", *foo);  // causes segfault
     exit(1);
   }
 }

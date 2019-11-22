@@ -2404,8 +2404,19 @@ void OpenGLRenderer3D::SetUniformMatrix4(const std::string &shaderName,
                              (float *)mat.elements);  // true == transposed
 }
 
+void OpenGLRenderer3D::SetContext() {
+  if (window) {
+    SDL_GL_MakeCurrent(window, context);
+  }
+}
+
+void OpenGLRenderer3D::DisableContext() {
+  if (window) {
+    SDL_GL_MakeCurrent(window, nullptr);
+  }
+}
+
 const screenshoot &OpenGLRenderer3D::GetScreen() {
-  DO_VALIDATION;
   return last_screen_;
 }
 }

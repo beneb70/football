@@ -46,6 +46,7 @@ python3 -m gfootball.play_game --action_set=full
     * [Play vs built-in AI](#play-vs-built-in-AI)
     * [Play vs pre-trained agent](#play-vs-pre-trained-agent)
     * [Trained checkpoints](#trained-checkpoints)
+* [Environment API](gfootball/doc/api.md)
 * [Observations](gfootball/doc/observation.md)
 * [Scenarios](gfootball/doc/scenarios.md)
 * [Multi-agent support](gfootball/doc/multi_agent.md)
@@ -83,17 +84,17 @@ Please note that playing the game is implemented through an environment, so huma
 ### Keyboard mappings
 The game defines following keyboard mapping (for the `keyboard` player type):
 
-- `ARROW UP` - run to the top.
-- `ARROW DOWN` - run to the bottom.
-- `ARROW LEFT` - run to the left.
-- `ARROW RIGHT` - run to the right.
-- `S` - short pass in attack mode, pressure in the defense mode.
-- `A` - high pass in attack mode, sliding in the defense mode.
-- `D` - shot in the attack mode, team pressure in the defense mode.
-- `W` - long pass in the attack mode, goalkeeper pressure in the defense mode.
-- `Q` - switch the active player on defense mode.
-- `C` - dribble in the attack mode.
-- `E` - sprint.
+* `ARROW UP` - run to the top.
+* `ARROW DOWN` - run to the bottom.
+* `ARROW LEFT` - run to the left.
+* `ARROW RIGHT` - run to the right.
+* `S` - short pass in the attack mode, pressure in the defense mode.
+* `A` - high pass in the attack mode, sliding in the defense mode.
+* `D` - shot in the the attack mode, team pressure in the defense mode.
+* `W` - long pass in the the attack mode, goalkeeper pressure in the defense mode.
+* `Q` - switch the active player in the defense mode.
+* `C` - dribble in the attack mode.
+* `E` - sprint.
 
 ### Play vs built-in AI
 Run `python3 -m gfootball.play_game --action_set=full`. By default, it starts
@@ -118,6 +119,8 @@ In order to see the checkpoints playing, run
 `python3 -m gfootball.play_game --players "ppo2_cnn:left_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT" --level=$LEVEL`,
 where `$CHECKPOINT` is the path to downloaded checkpoint.
 
+In order to train against a checkpoint, you can pass 'extra_players' argument to create_environment function.
+For example extra_players='ppo2_cnn:right_players=1,policy=gfootball_impala_cnn,checkpoint=$CHECKPOINT'.
 
 ## Frequent Problems & Solutions
 

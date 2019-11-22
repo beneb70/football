@@ -34,8 +34,7 @@ LoadingMatchPage::LoadingMatchPage(Gui2WindowManager *windowManager,
   loading->Show();
 
   // logos
-  MatchData *matchData = new MatchData();
-  GetMenuTask()->SetMatchData(matchData);
+  auto matchData = GetMenuTask()->GetMatchData();
   const TeamData& teamData1 = matchData->GetTeamData(0);
   const TeamData& teamData2 = matchData->GetTeamData(1);
 
@@ -67,19 +66,3 @@ LoadingMatchPage::LoadingMatchPage(Gui2WindowManager *windowManager,
 }
 
 LoadingMatchPage::~LoadingMatchPage() { DO_VALIDATION; }
-
-void LoadingMatchPage::Process() {
-  DO_VALIDATION;
-  Gui2Page::Process();
-
-  if (!sentStartGameSignal) {
-    DO_VALIDATION;
-    sentStartGameSignal = true;
-    GetMenuTask()->SetMenuAction(e_MenuAction_Game);
-  }
-}
-
-void LoadingMatchPage::Close() {
-  DO_VALIDATION;
-  windowManager->GetPageFactory()->CreatePage((int)e_PageID_Game, 0);
-}

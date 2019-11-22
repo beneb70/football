@@ -85,10 +85,11 @@ void Gui2Caption::SetTransparency(float transparency) {
 
 void Gui2Caption::Redraw() {
   DO_VALIDATION;
-  if (!GetScenarioConfig().render) {
+  if (!GetGameConfig().render) {
     DO_VALIDATION;
     return;
   }
+  GetTracker()->setDisabled(true);
   int x, y, w, h;
   windowManager->GetCoordinates(x_percent, y_percent, width_percent,
                                 height_percent, x, y, w, h);
@@ -164,14 +165,16 @@ void Gui2Caption::Redraw() {
   SDL_FreeSurface(textSurf);
 
   image->OnChange();
+  GetTracker()->setDisabled(false);
 }
 
 void Gui2Caption::SetCaption(const std::string &newCaption) {
   DO_VALIDATION;
-  if (!GetScenarioConfig().render) {
+  if (!GetGameConfig().render) {
     DO_VALIDATION;
     return;
   }
+  GetTracker()->setDisabled(true);
   std::string adaptedCaption = newCaption;
   if (adaptedCaption.compare("") == 0) adaptedCaption = " ";
   if (caption.compare(adaptedCaption) != 0) {
@@ -180,5 +183,6 @@ void Gui2Caption::SetCaption(const std::string &newCaption) {
     std::transform(caption.begin(), caption.end(), caption.begin(), ::toupper);
     Redraw();
   }
+  GetTracker()->setDisabled(false);
 }
 }

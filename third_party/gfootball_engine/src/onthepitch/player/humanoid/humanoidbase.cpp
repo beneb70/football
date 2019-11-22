@@ -89,20 +89,15 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match,
     : fullbodyTargetNode(fullbodyTargetNode),
       match(match),
       player(player),
-      anims(animCollection) {
+      anims(animCollection),
+      zMultiplier((1.0f / defaultPlayerHeight) * player->GetPlayerData()->GetHeight()) {
   DO_VALIDATION;
   interruptAnim = e_InterruptAnim_None;
   reQueueDelayFrames = 0;
-
-  buf_LowDetailMode = false;
-
   decayingPositionOffset = Vector3(0);
   decayingDifficultyFactor = 0.0f;
 
   assert(match);
-
-  float playerHeight = player->GetPlayerData()->GetHeight();
-  zMultiplier = (1.0f / defaultPlayerHeight) * playerHeight;
 
   boost::intrusive_ptr<Node> bla(new Node(*humanoidSourceNode.get(), "", GetScene3D()));
   humanoidNode = bla;
@@ -143,7 +138,6 @@ HumanoidBase::HumanoidBase(PlayerBase *player, Match *match,
   FillNodeMap(humanoidNode, nodeMap);
 
   PrepareFullbodyModel(colorCoords);
-  buf_bodyUpdatePhase = 0;
 
 
   // hairstyle
@@ -206,7 +200,8 @@ HumanoidBase::~HumanoidBase() {
 
 void HumanoidBase::Mirror() {
   // fullbodyNode - mirror for ball collision and render.
-  humanoidNode->SetPosition(humanoidNode->GetPosition() * Vector3(-1, -1, 1));
+  humanoidNode->SetPosition(humanoidNode->GetPosition() * Vector3(-1, -1, 1),
+                            false);
   Quaternion rotation = humanoidNode->GetRotation();
   if (!mirrored) {
     humanoidNode->SetRotation(Quaternion(rotation.elements[1], rotation.elements[0], rotation.elements[3], -rotation.elements[2]));
@@ -431,10 +426,6 @@ void HumanoidBase::PrepareFullbodyModel(
 
 void HumanoidBase::UpdateFullbodyNodes(bool mirror) {
   DO_VALIDATION;
-  if (!GetScenarioConfig().render) {
-    DO_VALIDATION;
-    return;
-  }
   if (mirror) {
     DO_VALIDATION;
     Mirror();
@@ -448,132 +439,171 @@ void HumanoidBase::UpdateFullbodyNodes(bool mirror) {
     joints[i].orientation = joints[i].node->GetDerivedRotation();
     joints[i].position = joints[i].node->GetDerivedPosition() - fullbodyOffset;
   }
-  if (GetScenarioConfig().render) {
-    DO_VALIDATION;
-    hairStyle->SetRotation(joints[2].orientation, false);
-    hairStyle->SetPosition(joints[2].position * zMultiplier + fullbodyOffset, false);
-    hairStyle->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
-  }
+  hairStyle->SetRotation(joints[2].orientation, false);
+  hairStyle->SetPosition(joints[2].position * zMultiplier + fullbodyOffset, false);
+  hairStyle->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
   if (mirror) {
     DO_VALIDATION;
     Mirror();
   }
 }
 
-bool HumanoidBase::NeedsModelUpdate() {
-  DO_VALIDATION;
-  if (buf_LowDetailMode && buf_bodyUpdatePhase != 1)
-    return false;
-  else
-    return true;
-}
-
 void HumanoidBase::UpdateFullbodyModel(bool updateSrc) {
   DO_VALIDATION;
-  if (!GetScenarioConfig().render) {
-    DO_VALIDATION;
-    return;
-  }
+  GetTracker()->setDisabled(true);
+  if (GetGameConfig().render) {
+    boost::intrusive_ptr<Resource<GeometryData> > fullbodyGeometryData =
+        boost::static_pointer_cast<Geometry>(
+            fullbodyNode->GetObject("fullbody"))
+            ->GetGeometryData();
+    std::vector<MaterializedTriangleMesh> &materializedTriangleMeshes =
+        fullbodyGeometryData->GetResource()->GetTriangleMeshesRef();
 
-  boost::intrusive_ptr < Resource<GeometryData> > fullbodyGeometryData = boost::static_pointer_cast<Geometry>(fullbodyNode->GetObject("fullbody"))->GetGeometryData();
-  std::vector < MaterializedTriangleMesh > &materializedTriangleMeshes = fullbodyGeometryData->GetResource()->GetTriangleMeshesRef();
-
-  for (unsigned int subgeom = 0; subgeom < fullbodySubgeomCount; subgeom++) {
-    DO_VALIDATION;
-
-    FloatArray &uniqueMesh = uniqueFullbodyMesh.at(subgeom);
-
-    const std::vector<WeightedVertex> &weightedVertices = weightedVerticesVec.at(subgeom);
-
-    int uniqueVertexCount = weightedVertices.size();
-
-    int uniqueElementOffset = uniqueMesh.size / GetTriangleMeshElementCount();
-
-    Vector3 origVertex;
-    Vector3 origNormal;
-    Vector3 origTangent;
-    Vector3 origBitangent;
-    Vector3 resultVertex;
-    Vector3 resultNormal;
-    Vector3 resultTangent;
-    Vector3 resultBitangent;
-    Vector3 adaptedVertex;
-    Vector3 adaptedNormal;
-    Vector3 adaptedTangent;
-    Vector3 adaptedBitangent;
-
-    for (int v = 0; v < uniqueVertexCount; v++) {
+    for (unsigned int subgeom = 0; subgeom < fullbodySubgeomCount; subgeom++) {
       DO_VALIDATION;
-      memcpy(origVertex.coords,    &uniqueMesh.data[weightedVertices[v].vertexID * 3],                           3 * sizeof(float)); // was: uniqueFullbodyMeshSrc
-      memcpy(origNormal.coords,    &uniqueMesh.data[weightedVertices[v].vertexID * 3 + uniqueElementOffset],     3 * sizeof(float));
-      memcpy(origTangent.coords,   &uniqueMesh.data[weightedVertices[v].vertexID * 3 + uniqueElementOffset * 3], 3 * sizeof(float));
-      memcpy(origBitangent.coords, &uniqueMesh.data[weightedVertices[v].vertexID * 3 + uniqueElementOffset * 4], 3 * sizeof(float));
 
-      if (weightedVertices[v].bones.size() == 1) {
-        DO_VALIDATION;
+      FloatArray &uniqueMesh = uniqueFullbodyMesh.at(subgeom);
 
-        resultVertex = origVertex;
-        resultVertex -= joints[weightedVertices[v].bones[0].jointID].origPos * zMultiplier;
-        resultVertex.Rotate(joints[weightedVertices[v].bones[0].jointID].orientation);
-        resultVertex += joints[weightedVertices[v].bones[0].jointID].position * zMultiplier;
+      const std::vector<WeightedVertex> &weightedVertices =
+          weightedVerticesVec.at(subgeom);
 
-        resultNormal = origNormal;
-        resultNormal.Rotate(joints[weightedVertices[v].bones[0].jointID].orientation);
+      int uniqueVertexCount = weightedVertices.size();
 
-        resultTangent = origTangent;
-        resultTangent.Rotate(joints[weightedVertices[v].bones[0].jointID].orientation);
+      int uniqueElementOffset = uniqueMesh.size / GetTriangleMeshElementCount();
 
-        resultBitangent = origBitangent;
-        resultBitangent.Rotate(joints[weightedVertices[v].bones[0].jointID].orientation);
+      Vector3 origVertex;
+      Vector3 origNormal;
+      Vector3 origTangent;
+      Vector3 origBitangent;
+      Vector3 resultVertex;
+      Vector3 resultNormal;
+      Vector3 resultTangent;
+      Vector3 resultBitangent;
+      Vector3 adaptedVertex;
+      Vector3 adaptedNormal;
+      Vector3 adaptedTangent;
+      Vector3 adaptedBitangent;
 
-      } else {
-        resultVertex.Set(0);
-        resultNormal.Set(0);
-        resultTangent.Set(0);
-        resultBitangent.Set(0);
+      for (int v = 0; v < uniqueVertexCount; v++) {
+        memcpy(origVertex.coords,
+               &uniqueMesh.data[weightedVertices[v].vertexID * 3],
+               3 * sizeof(float));  // was: uniqueFullbodyMeshSrc
+        memcpy(
+            origNormal.coords,
+            &uniqueMesh
+                 .data[weightedVertices[v].vertexID * 3 + uniqueElementOffset],
+            3 * sizeof(float));
+        memcpy(origTangent.coords,
+               &uniqueMesh.data[weightedVertices[v].vertexID * 3 +
+                                uniqueElementOffset * 3],
+               3 * sizeof(float));
+        memcpy(origBitangent.coords,
+               &uniqueMesh.data[weightedVertices[v].vertexID * 3 +
+                                uniqueElementOffset * 4],
+               3 * sizeof(float));
 
-        for (unsigned int b = 0; b < weightedVertices[v].bones.size(); b++) {
+        if (weightedVertices[v].bones.size() == 1) {
           DO_VALIDATION;
 
-          adaptedVertex = origVertex;
-          adaptedVertex -= joints[weightedVertices[v].bones[b].jointID].origPos * zMultiplier;
-          adaptedVertex.Rotate(joints[weightedVertices[v].bones[b].jointID].orientation);
-          adaptedVertex += joints[weightedVertices[v].bones[b].jointID].position * zMultiplier;
-          resultVertex += adaptedVertex * weightedVertices[v].bones[b].weight;
+          resultVertex = origVertex;
+          resultVertex -= joints[weightedVertices[v].bones[0].jointID].origPos *
+                          zMultiplier;
+          resultVertex.Rotate(
+              joints[weightedVertices[v].bones[0].jointID].orientation);
+          resultVertex +=
+              joints[weightedVertices[v].bones[0].jointID].position *
+              zMultiplier;
 
-          adaptedNormal = origNormal;
-          adaptedNormal.Rotate(joints[weightedVertices[v].bones[b].jointID].orientation);
-          resultNormal += adaptedNormal * weightedVertices[v].bones[b].weight;
+          resultNormal = origNormal;
+          resultNormal.Rotate(
+              joints[weightedVertices[v].bones[0].jointID].orientation);
 
-          adaptedTangent = origTangent;
-          adaptedTangent.Rotate(joints[weightedVertices[v].bones[b].jointID].orientation);
-          resultTangent += adaptedTangent * weightedVertices[v].bones[b].weight;
+          resultTangent = origTangent;
+          resultTangent.Rotate(
+              joints[weightedVertices[v].bones[0].jointID].orientation);
 
-          adaptedBitangent = origBitangent;
-          adaptedBitangent.Rotate(joints[weightedVertices[v].bones[b].jointID].orientation);
-          resultBitangent += adaptedBitangent * weightedVertices[v].bones[b].weight;
+          resultBitangent = origBitangent;
+          resultBitangent.Rotate(
+              joints[weightedVertices[v].bones[0].jointID].orientation);
+
+        } else {
+          resultVertex.Set(0);
+          resultNormal.Set(0);
+          resultTangent.Set(0);
+          resultBitangent.Set(0);
+
+          for (unsigned int b = 0; b < weightedVertices[v].bones.size(); b++) {
+            DO_VALIDATION;
+
+            adaptedVertex = origVertex;
+            adaptedVertex -=
+                joints[weightedVertices[v].bones[b].jointID].origPos *
+                zMultiplier;
+            adaptedVertex.Rotate(
+                joints[weightedVertices[v].bones[b].jointID].orientation);
+            adaptedVertex +=
+                joints[weightedVertices[v].bones[b].jointID].position *
+                zMultiplier;
+            resultVertex += adaptedVertex * weightedVertices[v].bones[b].weight;
+
+            adaptedNormal = origNormal;
+            adaptedNormal.Rotate(
+                joints[weightedVertices[v].bones[b].jointID].orientation);
+            resultNormal += adaptedNormal * weightedVertices[v].bones[b].weight;
+
+            adaptedTangent = origTangent;
+            adaptedTangent.Rotate(
+                joints[weightedVertices[v].bones[b].jointID].orientation);
+            resultTangent +=
+                adaptedTangent * weightedVertices[v].bones[b].weight;
+
+            adaptedBitangent = origBitangent;
+            adaptedBitangent.Rotate(
+                joints[weightedVertices[v].bones[b].jointID].orientation);
+            resultBitangent +=
+                adaptedBitangent * weightedVertices[v].bones[b].weight;
+          }
+
+          resultNormal.FastNormalize();
+          resultTangent.FastNormalize();
+          resultBitangent.FastNormalize();
         }
 
-        resultNormal.FastNormalize();
-        resultTangent.FastNormalize();
-        resultBitangent.FastNormalize();
+        if (updateSrc) {
+          DO_VALIDATION;
+          memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3],
+                 resultVertex.coords, 3 * sizeof(float));
+          memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3 +
+                                  uniqueElementOffset],
+                 resultNormal.coords, 3 * sizeof(float));
+          memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3 +
+                                  uniqueElementOffset * 3],
+                 resultTangent.coords, 3 * sizeof(float));
+          memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3 +
+                                  uniqueElementOffset * 4],
+                 resultBitangent.coords, 3 * sizeof(float));
+        }
+
+        memcpy(&materializedTriangleMeshes[subgeom]
+                    .vertices[weightedVertices[v].vertexID * 3],
+               resultVertex.coords, 3 * sizeof(float));
+        memcpy(&materializedTriangleMeshes[subgeom]
+                    .vertices[weightedVertices[v].vertexID * 3 +
+                              uniqueElementOffset],
+               resultNormal.coords, 3 * sizeof(float));
+        memcpy(&materializedTriangleMeshes[subgeom]
+                    .vertices[weightedVertices[v].vertexID * 3 +
+                              uniqueElementOffset * 3],
+               resultTangent.coords, 3 * sizeof(float));
+        memcpy(&materializedTriangleMeshes[subgeom]
+                    .vertices[weightedVertices[v].vertexID * 3 +
+                              uniqueElementOffset * 4],
+               resultBitangent.coords, 3 * sizeof(float));
       }
 
-      if (updateSrc) {
-        DO_VALIDATION;
-        memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3],                           resultVertex.coords,    3 * sizeof(float));
-        memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3 + uniqueElementOffset],     resultNormal.coords,    3 * sizeof(float));
-        memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3 + uniqueElementOffset * 3], resultTangent.coords,   3 * sizeof(float));
-        memcpy(&uniqueMesh.data[weightedVertices[v].vertexID * 3 + uniqueElementOffset * 4], resultBitangent.coords, 3 * sizeof(float));
-      }
-
-      memcpy(&materializedTriangleMeshes[subgeom].vertices[weightedVertices[v].vertexID * 3],                           resultVertex.coords,    3 * sizeof(float));
-      memcpy(&materializedTriangleMeshes[subgeom].vertices[weightedVertices[v].vertexID * 3 + uniqueElementOffset],     resultNormal.coords,    3 * sizeof(float));
-      memcpy(&materializedTriangleMeshes[subgeom].vertices[weightedVertices[v].vertexID * 3 + uniqueElementOffset * 3], resultTangent.coords,   3 * sizeof(float));
-      memcpy(&materializedTriangleMeshes[subgeom].vertices[weightedVertices[v].vertexID * 3 + uniqueElementOffset * 4], resultBitangent.coords, 3 * sizeof(float));
-    }
-
-  }  // subgeom
+    }  // subgeom
+  }
+  GetTracker()->setDisabled(false);
 }
 
 void HumanoidBase::Process() {
@@ -724,36 +754,17 @@ void HumanoidBase::Process() {
 
 void HumanoidBase::PreparePutBuffers() {
   DO_VALIDATION;
-
-  // offsets
   CalculateGeomOffsets();
-  buf_LowDetailMode = false;
-  if (!player->GetExternalController() && !match->GetPause()) {
-    DO_VALIDATION;
-    Vector3 focusPos = match->GetBall()->Predict(100).Get2D();
-    if (match->GetDesignatedPossessionPlayer()) {
-      DO_VALIDATION;
-      focusPos = focusPos * 0.5f + match->GetDesignatedPossessionPlayer()->GetPosition() * 0.5f;
-    }
-
-    if ((spatialState.position - focusPos).GetLength() > 14.0f) buf_LowDetailMode = true;
-  }
 }
 
 void HumanoidBase::FetchPutBuffers() {
   DO_VALIDATION;
-  buf_bodyUpdatePhase++;
-  if (buf_bodyUpdatePhase == 2) buf_bodyUpdatePhase = 0;
+  animApplyBuffer.anim->Apply(nodeMap, animApplyBuffer.frameNum, -1, animApplyBuffer.smooth, animApplyBuffer.smoothFactor, animApplyBuffer.position, animApplyBuffer.orientation, animApplyBuffer.offsets, &movementHistory, 10, animApplyBuffer.noPos, false);
+  humanoidNode->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
 }
 
 void HumanoidBase::Put(bool mirror) {
   DO_VALIDATION;
-  if (GetScenarioConfig().render) {
-    DO_VALIDATION;
-    humanoidNode->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
-  }
-  animApplyBuffer.anim->Apply(nodeMap, animApplyBuffer.frameNum, -1, animApplyBuffer.smooth, animApplyBuffer.smoothFactor, animApplyBuffer.position, animApplyBuffer.orientation, animApplyBuffer.offsets, &movementHistory, 10, animApplyBuffer.noPos, false);
-  humanoidNode->RecursiveUpdateSpatialData(e_SpatialDataType_Both);
   UpdateFullbodyNodes(mirror);
 }
 
@@ -814,7 +825,18 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos,
   spatialState.angle = startAngle;
   spatialState.directionVec = Vector3(0, -1, 0).GetRotated2D(startAngle);
   spatialState.floatVelocity = 0;
+
+  spatialState.actualMovement = Vector(0);
+  spatialState.physicsMovement = Vector(0);
+  spatialState.animMovement = Vector(0);
+  spatialState.movement = Vector(0);
+  spatialState.actionSmuggleMovement = Vector(0);
+  spatialState.movementSmuggleMovement = Vector(0);
+  spatialState.positionOffsetMovement = Vector(0);
+  spatialState.relBodyAngleNonquantized = 0;
+
   spatialState.enumVelocity = e_Velocity_Idle;
+  spatialState.floatVelocity = 0;
   spatialState.movement = Vector3(0);
   spatialState.relBodyDirectionVec = Vector3(0, -1, 0);
   spatialState.relBodyAngle = 0;
@@ -864,6 +886,11 @@ void HumanoidBase::ResetPosition(const Vector3 &newPos,
   decayingDifficultyFactor = 0.0f;
 
   movementHistory.clear();
+  reQueueDelayFrames = 0;
+  tripDirection = Vector3(0);
+  for (int x = 0; x < body_part_max - 1; x++) {
+    nodeMap[x]->SetRotation(Quaternion(), true);
+  }
 }
 
 void HumanoidBase::OffsetPosition(const Vector3 &offset) {
@@ -1313,7 +1340,7 @@ void HumanoidBase::CalculateSpatialState() {
   assert(position.coords[2] == 0.0f);
 
   spatialState.actualMovement = (position - previousPosition2D) * 100.0f;
-  float positionOffsetMovementIgnoreFactor = 0.5f;
+  const float positionOffsetMovementIgnoreFactor = 0.5f;
   spatialState.physicsMovement = spatialState.actualMovement - (spatialState.actionSmuggleMovement) - (spatialState.movementSmuggleMovement) - (spatialState.positionOffsetMovement * positionOffsetMovementIgnoreFactor);
   spatialState.animMovement = spatialState.physicsMovement;
   if (currentAnim.positions.size() > 0) {
@@ -2276,8 +2303,6 @@ void HumanoidBase::ProcessState(EnvState *state) {
   DO_VALIDATION;
   humanoidNode->ProcessState(state);
   animApplyBuffer.ProcessState(state);
-  state->process(buf_LowDetailMode);
-  state->process(buf_bodyUpdatePhase);
   offsets.ProcessState(state);
   currentAnim.ProcessState(state);
   state->process(previousAnim_frameNum);
@@ -2294,7 +2319,6 @@ void HumanoidBase::ProcessState(EnvState *state) {
   state->process(tripDirection);
   state->process(decayingPositionOffset);
   state->process(decayingDifficultyFactor);
-  state->process(zMultiplier);
   int s = movementHistory.size();
   state->process(s);
   movementHistory.resize(s);

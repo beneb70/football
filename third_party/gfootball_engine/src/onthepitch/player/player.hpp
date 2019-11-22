@@ -144,8 +144,6 @@ class Player : public PlayerBase {
     TacticalPlayerSituation tacticalSituation;
 
     bool buf_nameCaptionShowCondition = false;
-    std::string buf_nameCaption;
-    std::string buf_debugCaption;
     Vector3 buf_playerColor;
 
     Gui2Caption *nameCaption = nullptr;

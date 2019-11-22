@@ -31,7 +31,6 @@ class GamePage : public Gui2Page {
   public:
     GamePage(Gui2WindowManager *windowManager_, const Gui2PageData &pageData_);
     virtual ~GamePage();
-    virtual void Process();
 };
 
 #endif

@@ -44,8 +44,6 @@ namespace blunted {
       Gui2Root *GetRoot() { DO_VALIDATION; return root; }
       void SetFocus(Gui2View *view);
 
-      void Process();
-
       void GetCoordinates(float x_percent, float y_percent, float width_percent,
                           float height_percent, int &x, int &y, int &width,
                           int &height) const;

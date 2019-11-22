@@ -35,7 +35,6 @@ class Officials {
     PlayerOfficial *GetReferee() { DO_VALIDATION; return referee; }
 
     void Process();
-    void PreparePutBuffers();
     void FetchPutBuffers();
     void Put(bool mirror);
 

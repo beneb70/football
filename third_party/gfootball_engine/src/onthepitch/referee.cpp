@@ -30,11 +30,11 @@ void Foul::ProcessState(EnvState *state) {
   state->process(foulType);
   state->process(advantage);
   state->process(foulTime);
-  if (state->getContext()->scenario_config->reverse_team_processing) {
+  if (state->getConfig()->reverse_team_processing) {
     foulPosition.Mirror();
   }
   state->process(foulPosition);
-  if (state->getContext()->scenario_config->reverse_team_processing) {
+  if (state->getConfig()->reverse_team_processing) {
     foulPosition.Mirror();
   }
   state->process(hasBeenProcessed);
@@ -44,36 +44,36 @@ void RefereeBuffer::ProcessState(EnvState *state) {
   DO_VALIDATION;
   state->process(active);
   state->process((void*) &desiredSetPiece, sizeof(desiredSetPiece));
-  if (state->getContext()->scenario_config->reverse_team_processing) {
+  if (state->getConfig()->reverse_team_processing) {
     teamID = 1 - teamID;
   }
   state->process(teamID);
-  if (state->getContext()->scenario_config->reverse_team_processing) {
+  if (state->getConfig()->reverse_team_processing) {
     teamID = 1 - teamID;
   }
   state->process(setpiece_team);
   state->process(stopTime);
   state->process(prepareTime);
   state->process(startTime);
-  if (state->getContext()->scenario_config->reverse_team_processing) {
+  if (state->getConfig()->reverse_team_processing) {
     restartPos.Mirror();
   }
   state->process(restartPos);
-  if (state->getContext()->scenario_config->reverse_team_processing) {
+  if (state->getConfig()->reverse_team_processing) {
     restartPos.Mirror();
   }
   state->process(taker);
   state->process(endPhase);
 }
 
-Referee::Referee(Match *match) : match(match) {
+Referee::Referee(Match *match, bool animations) : match(match), animations(animations) {
   DO_VALIDATION;
   buffer.desiredSetPiece = e_GameMode_KickOff;
   buffer.teamID = match->FirstTeam();
   buffer.setpiece_team = match->GetTeam(match->FirstTeam());
   buffer.stopTime = 0;
   buffer.prepareTime = 0;
-  buffer.startTime = buffer.prepareTime + 2000;
+  buffer.startTime = 2000;
   buffer.restartPos = GetScenarioConfig().ball_position;
   buffer.taker = 0;
   buffer.endPhase = true;
@@ -126,6 +126,9 @@ void Referee::Process() {
           buffer.stopTime = match->GetActualTime_ms();
           // Number of ms for replay.
           buffer.prepareTime = match->GetActualTime_ms() + 500;
+          if (!animations) {
+            match->BumpActualTime_ms(400);
+          }
           // Number of ms for kickoff.
           buffer.startTime = buffer.prepareTime + 500;
           buffer.restartPos = Vector3(0, 0, 0);
@@ -138,6 +141,9 @@ void Referee::Process() {
           buffer.desiredSetPiece = e_GameMode_Corner;
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
+          if (!animations) {
+            match->BumpActualTime_ms(1900);
+          }
           buffer.startTime = buffer.prepareTime + 2000;
           float y = ballPos.coords[1];
           if (y > 0) y = pitchHalfH; else
@@ -148,6 +154,9 @@ void Referee::Process() {
           buffer.desiredSetPiece = e_GameMode_GoalKick;
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
+          if (!animations) {
+            match->BumpActualTime_ms(1900);
+          }
           buffer.startTime = buffer.prepareTime + 2000;
           buffer.restartPos = Vector3(pitchHalfW * 0.92 * -lastSide, 0, 0);
           buffer.teamID = 1 - lastTouchTeam->GetID();
@@ -173,6 +182,9 @@ void Referee::Process() {
           buffer.desiredSetPiece = e_GameMode_ThrowIn;
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
+          if (!animations) {
+            match->BumpActualTime_ms(1900);
+          }
           buffer.startTime = buffer.prepareTime + 2000;
           buffer.restartPos.coords[0] = clamp(ballPos.coords[0], -pitchHalfW + 0.6f, pitchHalfW - 0.6f);
           if (ballPos.coords[1] >  0) buffer.restartPos.coords[1] = pitchHalfH;
@@ -192,17 +204,16 @@ void Referee::Process() {
 
       if (buffer.prepareTime == match->GetActualTime_ms()) {
         DO_VALIDATION;
-
         if (buffer.endPhase == true) {
-          DO_VALIDATION;
           if (match->GetMatchPhase() == e_MatchPhase_PreMatch) {
-            DO_VALIDATION;
             match->SetMatchPhase(e_MatchPhase_1stHalf);
           }
           buffer.endPhase = false;
         }
 
+        randomize(GetScenarioConfig().game_engine_random_seed);
         PrepareSetPiece(buffer.desiredSetPiece);
+        DO_VALIDATION;
       }
 
       if (buffer.startTime == match->GetActualTime_ms()) {
@@ -296,6 +307,9 @@ void Referee::BallTouched() {
           buffer.desiredSetPiece = e_GameMode_FreeKick;
           buffer.stopTime = match->GetActualTime_ms();
           buffer.prepareTime = match->GetActualTime_ms() + 2000;
+          if (!animations) {
+            match->BumpActualTime_ms(1900);
+          }
           buffer.startTime = buffer.prepareTime + 2000;
           buffer.restartPos = ballOwner->GetPitchPosition();
           buffer.teamID = 1 - lastTouchTeamID;
@@ -464,14 +478,31 @@ bool Referee::CheckFoul() {
       buffer.desiredSetPiece = e_GameMode_FreeKick;
       buffer.stopTime = match->GetActualTime_ms();
       buffer.prepareTime = match->GetActualTime_ms() + 2000;
-      if (foul.foulType >= 2) buffer.prepareTime += 10000;
+      if (!animations) {
+        match->BumpActualTime_ms(1900);
+      }
+      if (foul.foulType >= 2) {
+        buffer.prepareTime += 10000;
+        if (!animations) {
+          match->BumpActualTime_ms(10000);
+        }
+
+      }
       buffer.startTime = buffer.prepareTime + 2000;
       buffer.restartPos = foul.foulPosition;
     } else {
       buffer.desiredSetPiece = e_GameMode_Penalty;
       buffer.stopTime = match->GetActualTime_ms();
       buffer.prepareTime = match->GetActualTime_ms() + 2000;
-      if (foul.foulType >= 2) buffer.prepareTime += 10000;
+      if (!animations) {
+        match->BumpActualTime_ms(1900);
+      }
+      if (foul.foulType >= 2) {
+        buffer.prepareTime += 10000;
+        if (!animations) {
+          match->BumpActualTime_ms(10000);
+        }
+      }
       buffer.startTime = buffer.prepareTime + 2000;
       buffer.restartPos = Vector3(
           (pitchHalfW - 11.0) * foul.foulPlayer->GetTeam()->GetStaticSide(), 0,

@@ -29,6 +29,7 @@ using std::string;
 class GameEnv_Python : public GameEnv {
  public:
   PyObject* get_frame_python() {
+    ContextHolder c(this);
     screenshoot screen = get_frame();
     PyObject* str = PyBytes_FromStringAndSize(screen.data(), screen.size());
     return str;
@@ -41,20 +42,28 @@ class GameEnv_Python : public GameEnv {
   }
 
   void step_python() {
-    SetGame(this);
+    ContextHolder c(this);
     PyThreadState* _save = NULL;
     Py_UNBLOCK_THREADS;
     step();
     Py_BLOCK_THREADS;
   }
 
-  void reset_python(ScenarioConfig& game_config) {
-    SetGame(this);
+  void render_python(bool swap_buffer) {
+    ContextHolder c(this);
+    PyThreadState* _save = NULL;
+    Py_UNBLOCK_THREADS;
+    render(swap_buffer);
+    Py_BLOCK_THREADS;
+  }
+
+  void reset_python(ScenarioConfig& game_config, bool init_animation) {
+    ContextHolder c(this);
     context->step = -1;
     PyThreadState* _save = NULL;
     Py_UNBLOCK_THREADS;
     GetTracker()->setDisabled(true);
-    reset(game_config);
+    reset(game_config, init_animation);
     GetTracker()->setDisabled(false);
     Py_BLOCK_THREADS;
   }
@@ -123,6 +132,9 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
       .def("get_state", &GameEnv_Python::get_state_python)
       .def("set_state", &GameEnv_Python::set_state)
       .def("reset", &GameEnv_Python::reset_python)
+      .def("render", &GameEnv_Python::render_python)
+      .def_readwrite("config", &GameEnv_Python::scenario_config)
+      .def_readwrite("game_config", &GameEnv_Python::game_config)
       .def_readwrite("state", &GameEnv_Python::state)
       .def_readwrite("waiting_for_game_count",
                      &GameEnv_Python::waiting_for_game_count)
@@ -134,13 +146,14 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
   ;
 
   class_<GameConfig>("GameConfig")
-      .def_readwrite("high_quality", &GameConfig::high_quality)
-      .def_readwrite("render_mode", &GameConfig::render_mode)
+      .def_readwrite("render", &GameConfig::render)
       .def_readwrite("physics_steps_per_frame",
                      &GameConfig::physics_steps_per_frame);
 
-  class_<ScenarioConfig, SHARED_PTR<ScenarioConfig>, boost::noncopyable>("ScenarioConfig", no_init)
-      .def("make", &ScenarioConfig::make).staticmethod("make")
+  class_<ScenarioConfig, SHARED_PTR<ScenarioConfig>, boost::noncopyable>(
+      "ScenarioConfig", no_init)
+      .def("make", &ScenarioConfig::make)
+      .staticmethod("make")
       .def_readwrite("ball_position", &ScenarioConfig::ball_position)
       .def_readwrite("left_team", &ScenarioConfig::left_team)
       .def_readwrite("right_team", &ScenarioConfig::right_team)
@@ -153,20 +166,28 @@ BOOST_PYTHON_MODULE(_gameplayfootball) {
                      &ScenarioConfig::reverse_team_processing)
       .def_readwrite("offsides", &ScenarioConfig::offsides)
       .def_readwrite("real_time", &ScenarioConfig::real_time)
-      .def_readwrite("render", &ScenarioConfig::render)
       .def_readwrite("left_team_difficulty",
                      &ScenarioConfig::left_team_difficulty)
       .def_readwrite("right_team_difficulty",
-                     &ScenarioConfig::right_team_difficulty);
+                     &ScenarioConfig::right_team_difficulty)
+      .def_readwrite("deterministic", &ScenarioConfig::deterministic)
+      .def_readwrite("end_episode_on_score",
+                     &ScenarioConfig::end_episode_on_score)
+      .def_readwrite("end_episode_on_possession_change",
+                     &ScenarioConfig::end_episode_on_possession_change)
+      .def_readwrite("end_episode_on_out_of_play",
+                     &ScenarioConfig::end_episode_on_out_of_play)
+      .def_readwrite("game_duration", &ScenarioConfig::game_duration);
 
   class_<std::vector<FormationEntry> >("FormationEntryVec").def(
       vector_indexing_suite<std::vector<FormationEntry> >());
 
   class_<FormationEntry>("FormationEntry",
-                         init<float, float, e_PlayerRole, bool>())
+                         init<float, float, e_PlayerRole, bool, bool>())
       .def_readonly("role", &FormationEntry::role)
       .add_property("position", &FormationEntry::position_env)
-      .def_readwrite("lazy", &FormationEntry::lazy);
+      .def_readwrite("lazy", &FormationEntry::lazy)
+      .def_readwrite("controllable", &FormationEntry::controllable);
 
   enum_<e_PlayerRole>("e_PlayerRole")
       .value("e_PlayerRole_GK", e_PlayerRole::e_PlayerRole_GK)

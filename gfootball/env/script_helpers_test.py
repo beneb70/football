@@ -80,11 +80,11 @@ class ScriptHelpersTest(unittest.TestCase):
     hash1 = self.compute_hash(list(dump1)[0])
     cfg = {
         'dump_full_episodes': True,
-        'render': False
     }
     script_helpers.ScriptHelpers().replay(list(dump1)[0],
                                           directory=test_tmpdir,
-                                          config_update=cfg)
+                                          config_update=cfg,
+                                          render=False)
     dump2 = self.current_dumps() - dumps_after
     assert len(dump2) == 1, dump2
     hash2 = self.compute_hash(list(dump2)[0])

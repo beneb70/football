@@ -62,10 +62,8 @@ enum e_RenderingMode {
 
 class GameConfig {
  public:
-  // Should game render in high quality.
-  bool high_quality = false;
   // Is rendering enabled.
-  e_RenderingMode render_mode = e_Onscreen;
+  bool render = false;
   // Directory with textures and other resources.
   std::string data_dir;
   // How many physics animation steps are done per single environment step.
@@ -77,8 +75,6 @@ class GameConfig {
     return data_dir + '/' + path;
   }
   void ProcessState(EnvState* state) {
-    state->process(high_quality);
-    state->process(&render_mode, sizeof(render_mode));
     state->process(data_dir);
     state->process(physics_steps_per_frame);
   }
@@ -88,10 +84,6 @@ struct ScenarioConfig {
  private:
   ScenarioConfig() { }
  public:
-  ScenarioConfig(ScenarioConfig const &) = delete;
-  ScenarioConfig(ScenarioConfig&&) = delete;
-  ScenarioConfig& operator=(ScenarioConfig const &) = delete;
-  ScenarioConfig& operator=(ScenarioConfig&&) = delete;
   static SHARED_PTR<ScenarioConfig> make() {
     return SHARED_PTR<ScenarioConfig>(new ScenarioConfig());
   }
@@ -117,12 +109,16 @@ struct ScenarioConfig {
   unsigned int game_engine_random_seed = 42;
   // Reverse order of teams' processing, used for symmetry testing.
   bool reverse_team_processing = false;
-  // Is rendering enabled.
-  bool render = true;
   // Left team AI difficulty level, from 0.0 to 1.0.
   float left_team_difficulty = 1.0;
   // Right team AI difficulty level, from 0.0 to 1.0.
-  float right_team_difficulty = 0.8;
+  float right_team_difficulty = 0.6;
+  bool deterministic = false;
+  bool end_episode_on_score = false;
+  bool end_episode_on_possession_change = false;
+  bool end_episode_on_out_of_play = false;
+  int game_duration = 3000;
+  friend GameEnv;
 
   bool LeftTeamOwnsBall() { DO_VALIDATION;
     float leftDistance = 1000000;
@@ -158,9 +154,14 @@ struct ScenarioConfig {
     state->process(real_time);
     state->process(game_engine_random_seed);
     state->process(reverse_team_processing);
-    state->process(render);
     state->process(left_team_difficulty);
     state->process(right_team_difficulty);
+    state->process(deterministic);
+    state->process(end_episode_on_score);
+    state->process(end_episode_on_possession_change);
+    state->process(end_episode_on_out_of_play);
+    state->process(game_duration);
+
  }
 };
 
@@ -174,14 +175,16 @@ enum GameState {
 class GameContext {
  public:
   GameContext() : rng(BaseGenerator(), Distribution()), rng_non_deterministic(BaseGenerator(), Distribution()) { }
-  std::unique_ptr<GraphicsSystem> graphicsSystem;
+  GraphicsSystem graphicsSystem;
   boost::shared_ptr<GameTask> gameTask;
   boost::shared_ptr<MenuTask> menuTask;
   boost::shared_ptr<Scene2D> scene2D;
   boost::shared_ptr<Scene3D> scene3D;
+  boost::intrusive_ptr<Node> fullbodyNode;
+  boost::intrusive_ptr<Node> goalsNode;
+  boost::intrusive_ptr<Node> stadiumRender;
+  boost::intrusive_ptr<Node> stadiumNoRender;
   Properties *config = nullptr;
-  ScenarioConfig* scenario_config = nullptr;
-  GameConfig game_config;
   std::string font;
   TTF_Font *defaultFont = nullptr;
   TTF_Font *defaultOutlineFont = nullptr;
@@ -234,7 +237,7 @@ GameConfig& GetGameConfig();
 
 const std::vector<IHIDevice*> &GetControllers();
 
-void run_game(Properties* input_config);
+void run_game(Properties* input_config, bool render);
 void randomize(unsigned int seed);
 void quit_game();
 int main(int argc, char** argv);
@@ -244,7 +247,6 @@ class Tracker {
   void setup(long start, long end) {
     this->start = start;
     this->end = end;
-    this->verify_state = true;
     GetContext().tracker_disabled = 0;
     GetContext().tracker_pos = 0;
   }
@@ -283,8 +285,6 @@ class Tracker {
   // each call in the verification range (2 bytes / call).
   long start = 0LL;
   long end = 1000000000LL;
-  // Should full state snapshot be performed (more memory needed).
-  bool verify_state = true;
   bool verify_stack_trace = true;
   std::mutex mtx;
   std::condition_variable cv;

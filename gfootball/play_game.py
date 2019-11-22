@@ -47,11 +47,11 @@ def main(_):
       'dump_full_episodes': True,
       'players': players,
       'real_time': FLAGS.real_time,
-      'render': True
   })
   if FLAGS.level:
     cfg['level'] = FLAGS.level
   env = football_env.FootballEnv(cfg)
+  env.render()
   env.reset()
   try:
     while True:

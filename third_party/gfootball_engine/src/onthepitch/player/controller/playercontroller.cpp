@@ -228,7 +228,6 @@ void PlayerController::ProcessPlayerController(EnvState *state) {
   state->process(possessionAmount);
   state->process(teamPossessionAmount);
   state->process(fadingTeamPossessionAmount);
-  state->process(timeNeededToGetToBall);
   state->process(oppTimeNeededToGetToBall);
   state->process(hasBestChanceOfPossession);
 }
@@ -253,9 +252,9 @@ void PlayerController::Reset() {
   possessionAmount = 0.9f;
   teamPossessionAmount = 1.0f;
   fadingTeamPossessionAmount = 1.0f;
-  timeNeededToGetToBall = 100;
   oppTimeNeededToGetToBall = 100;
   hasBestPossession = false;
+  _timeNeeded_ms = 0;
 }
 
 float PlayerController::OppBetweenBallAndMeDot() {
@@ -762,7 +761,6 @@ void PlayerController::_CalculateSituation() {
     fadingTeamPossessionAmount = fadingTeamPossessionAmount * distanceBias + teamPossessionAmount * (1.0f - distanceBias);
   }
 
-  timeNeededToGetToBall = _timeNeeded_ms;
   oppTimeNeededToGetToBall = match->GetTeam(abs(team->GetID() - 1))->GetTimeNeededToGetToBall_ms();
   hasBestPossession = hasPossession && possessionAmount >= 1.0f;
 }

@@ -20,9 +20,9 @@
 from . import *
 
 def build_scenario(builder):
-  builder.SetFlag('game_duration', 3000)
-  builder.SetFlag('deterministic', True)
-  builder.SetFlag('end_episode_on_score', True)
+  builder.config().game_duration = 3000
+  builder.config().deterministic = True
+  builder.config().end_episode_on_score = True
   if builder.EpisodeNumber() % 2 == 0:
     first_team = Team.e_Left
     second_team = Team.e_Right

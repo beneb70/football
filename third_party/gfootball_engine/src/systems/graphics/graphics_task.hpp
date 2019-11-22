@@ -34,8 +34,7 @@ namespace blunted {
     public:
       GraphicsTask(GraphicsSystem *system);
       ~GraphicsTask();
-      void GetPhase();
-      void ProcessPhase();
+      void Render(bool swap_buffer);
     protected:
       bool Execute(boost::intrusive_ptr<Camera> camera);
       void EnqueueShadowMap(boost::intrusive_ptr<Camera> camera, boost::intrusive_ptr<Light> light);

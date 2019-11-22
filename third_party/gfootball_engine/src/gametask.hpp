@@ -30,10 +30,11 @@ class GameTask {
     GameTask();
     ~GameTask();
 
-    void StartMatch();
-    void StopMatch();
+    void StartMatch(bool init_animation);
+    bool StopMatch();
 
     void ProcessPhase();
+    void PrepareRender();
 
     Match *GetMatch() { DO_VALIDATION; return match.get(); }
 

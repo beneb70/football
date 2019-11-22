@@ -54,7 +54,6 @@ void PlayerBase::Deactivate() {
   isActive = false;
 
   externalController = nullptr;
-  controller.reset();
 }
 
 IController *PlayerBase::GetController() {

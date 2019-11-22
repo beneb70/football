@@ -129,12 +129,7 @@ void Gui2WindowManager::SetFocus(Gui2View *view) {
   }
 }
 
-void Gui2WindowManager::Process() {
-  DO_VALIDATION;
-  root->Process();
-}
-
-  void Gui2WindowManager::GetCoordinates(float x_percent, float y_percent, float width_percent, float height_percent, int &x, int &y, int &width, int &height) const {
+void Gui2WindowManager::GetCoordinates(float x_percent, float y_percent, float width_percent, float height_percent, int &x, int &y, int &width, int &height) const {
 
     int contextW, contextH, bpp; // context
     scene2D->GetContextSize(contextW, contextH, bpp);

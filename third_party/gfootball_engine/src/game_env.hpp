@@ -24,11 +24,27 @@ class GameTask;
 
 typedef std::vector<std::string> StringVector;
 
+class ContextHolder {
+ public:
+  ContextHolder(GameEnv* game) : game(game) {
+     SetGame(game);
+     GetGraphicsSystem()->SetContext();
+  }
+  ~ContextHolder() {
+    if (GetGame() != game) {
+      Log(e_FatalError, "football", "main", "game state was corrupted");
+    }
+    GetGraphicsSystem()->DisableContext();
+  }
+ private:
+  const GameEnv* game;
+};
+
 // Game environment. This is the class that can be used directly from Python.
 struct GameEnv {
   GameEnv() { DO_VALIDATION;}
   // Start the game (in separate process).
-  void start_game(GameConfig& game_config);
+  void start_game();
 
   // Get the current state of the game (observation).
   SharedInfo get_info();
@@ -39,21 +55,25 @@ struct GameEnv {
   // Executes the action inside the game.
   bool sticky_action_state(int action, bool left_team, int player);
   void action(int action, bool left_team, int player);
-  void reset(ScenarioConfig& game_config);
+  void reset(ScenarioConfig& game_config, bool init_animation);
+  void render(bool swap_buffer = true);
   std::string get_state();
   void set_state(const std::string& state);
   void tracker_setup(long start, long end) { GetTracker()->setup(start, end); }
   void step();
   void ProcessState(EnvState* state);
+  ScenarioConfig& config();
 
  private:
   void setConfig(ScenarioConfig& scenario_config);
-  void do_step(int count, bool render);
+  void do_step(int count);
   void getObservations();
   AIControlledKeyboard* keyboard_ = nullptr;
   bool disable_graphics_ = false;
   int last_step_rendered_frames_ = 1;
  public:
+  ScenarioConfig scenario_config;
+  GameConfig game_config;
   GameContext* context = nullptr;
   GameState state = game_created;
   int waiting_for_game_count = 0;

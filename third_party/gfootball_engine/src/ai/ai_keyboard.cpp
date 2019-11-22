@@ -19,7 +19,6 @@ AIControlledKeyboard::AIControlledKeyboard() {
 }
 
 bool AIControlledKeyboard::GetButton(e_ButtonFunction buttonFunction) {
-  DO_VALIDATION;
   return buttons_pressed_[buttonFunction];
 }
 

@@ -24,8 +24,7 @@
 #include "../main.hpp"
 
 HumanGamer::HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color)
-    : team(team), hid(hid), playerColor(color) {
-  controller.reset(new HumanController(team->GetMatch(), hid));
+    : team(team), hid(hid), controller(team->GetMatch(), hid), playerColor(color) {
   DO_VALIDATION;
   std::vector<Player*> activePlayers;
   team->GetActivePlayers(activePlayers);
@@ -35,7 +34,6 @@ HumanGamer::HumanGamer(Team *team, IHIDevice *hid, e_PlayerColor color)
 
 HumanGamer::~HumanGamer() {
   DO_VALIDATION;
-  controller.reset();
 
   if (selectedPlayer) {
     DO_VALIDATION;
@@ -53,7 +51,7 @@ void HumanGamer::SetSelectedPlayer(Player *player) {
   if (player) {
     DO_VALIDATION;
     selectedPlayer = player;
-    selectedPlayer->SetExternalController(controller.get());
+    selectedPlayer->SetExternalController(&controller);
   } else {
     selectedPlayer = 0;
   }
@@ -61,8 +59,12 @@ void HumanGamer::SetSelectedPlayer(Player *player) {
 
 void HumanGamer::ProcessState(EnvState *state) {
   DO_VALIDATION;
-  if (controller) {
-    controller->ProcessState(state);
-  }
   state->process(selectedPlayer);
+  state->process(team);
+  state->setValidate(false);
+  state->process(hid);
+  state->process((void*) &playerColor, sizeof(playerColor));
+  state->setValidate(true);
+  controller.PreProcess(team->GetMatch(), hid);
+  controller.ProcessState(state);
 }

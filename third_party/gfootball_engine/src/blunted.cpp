@@ -51,7 +51,7 @@ void Exit() {
   DO_VALIDATION;
   GetContext().scene2D->Exit();
   GetContext().scene3D->Exit();
-  GetContext().graphicsSystem->Exit();
+  GetContext().graphicsSystem.Exit();
   TTF_Quit();
   SDL_Quit();
 }

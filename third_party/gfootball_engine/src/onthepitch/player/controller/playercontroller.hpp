@@ -87,7 +87,6 @@ class PlayerController : public IController {
     float possessionAmount = 0.0f;
     float teamPossessionAmount = 0.0f;
     float fadingTeamPossessionAmount = 0.0f;
-    int timeNeededToGetToBall = 0;
     int oppTimeNeededToGetToBall = 0;
     bool hasBestChanceOfPossession = false;
 };

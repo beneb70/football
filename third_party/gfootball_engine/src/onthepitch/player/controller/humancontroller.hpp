@@ -27,7 +27,7 @@ class Player;
 class HumanController : public PlayerController {
 
   public:
-    HumanController(Match *match, IHIDevice *hid);
+    HumanController(Match *match = nullptr, IHIDevice *hid = nullptr);
     virtual ~HumanController();
 
     virtual void SetPlayer(PlayerBase *player);
@@ -37,7 +37,12 @@ class HumanController : public PlayerController {
     virtual Vector3 GetDirection();
     virtual float GetFloatVelocity();
 
-    virtual void ProcessState(EnvState* state) { DO_VALIDATION;
+    void PreProcess(Match *match, IHIDevice *hid) {
+      this->match = match;
+      this->hid= hid;
+   }
+
+    void ProcessState(EnvState* state) { DO_VALIDATION;
       ProcessPlayerController(state);
       hid->ProcessState(state);
       state->process(actionMode);

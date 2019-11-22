@@ -34,5 +34,3 @@ GamePage::GamePage(Gui2WindowManager *windowManager_,
 }
 
 GamePage::~GamePage() { DO_VALIDATION; }
-
-void GamePage::Process() { DO_VALIDATION; }

@@ -381,7 +381,7 @@ TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos,
                                           const Vector3 &playerMovement,
                                           const Vector3 &targetPos,
                                           float maxVelocity, bool precise,
-                                          int maxTime_ms) {
+                                          unsigned int maxTime_ms) {
   DO_VALIDATION;
 
   TimeNeeded result;
@@ -409,6 +409,7 @@ TimeNeeded AI_GetTimeNeededForDistance_ms(const Vector3 &playerPos,
 
   float ffo = 0.1f; // in front of foot offset (ideal ball position)
   if (currentMovement.GetLength() > idleDribbleSwitch) {
+
     DO_VALIDATION;
     currentPos += currentMovement.GetNormalized() * ffo;
     currentPos += currentMovement * 0.01f;
@@ -863,24 +864,26 @@ bool AI_HasPossession(Ball *ball, Player *player) {
 }
 
 Player *AI_GetClosestPlayer(Team *team, const Vector3 &position,
-                            bool onlyAIControlled, Player *except) {
+                            bool onlyAIControlled, Player *except,
+                            bool onlySelectable) {
   DO_VALIDATION;
   const std::vector<Player*> &players = team->GetAllPlayers();
 
   float closestDistance = 10000;
   Player *closestPlayer = 0;
 
-  for (unsigned int i = 0; i < players.size(); i++) {
+  for (auto p : players) {
     DO_VALIDATION;
-    if (players[i]->IsActive() && players[i] != except) {
+    if (p->IsActive() && p != except) {
       DO_VALIDATION;
-      float distance = (players[i]->GetPosition() - position).GetLength();
+      float distance = (p->GetPosition() - position).GetLength();
       if (distance < closestDistance) {
         DO_VALIDATION;
-        if (!onlyAIControlled || !team->IsHumanControlled(players[i])) {
+        if ((!onlyAIControlled || !team->IsHumanControlled(p)) &&
+            (!onlySelectable || p->GetFormationEntry().controllable)) {
           DO_VALIDATION;
           closestDistance = distance;
-          closestPlayer = players[i];
+          closestPlayer = p;
         }
       }
     }

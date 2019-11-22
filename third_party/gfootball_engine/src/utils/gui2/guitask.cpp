@@ -31,14 +31,4 @@ Gui2Task::~Gui2Task() {
   windowManager->Exit();
   delete windowManager;
 }
-
-void Gui2Task::ProcessPhase() {
-  DO_VALIDATION;
-  if (GetScenarioConfig().render) {
-    DO_VALIDATION;
-    windowManager->GetRoot()->SetRecursiveZPriority(
-        0);
-  }
-  windowManager->Process();
-}
 }

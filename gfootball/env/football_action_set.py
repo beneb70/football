@@ -165,8 +165,6 @@ action_set_dict = {
         action_sprint,
         action_release_direction,
         action_release_sprint,
-        action_keeper_rush,
-        action_release_keeper_rush,
         action_sliding,
         action_dribble,
         action_release_dribble,
